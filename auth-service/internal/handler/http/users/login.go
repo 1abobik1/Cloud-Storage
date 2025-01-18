@@ -12,8 +12,7 @@ import (
 	"github.com/go-playground/validator/v10"
 )
 
-// check validation, check pswd and email exist
-// create new tokens and save db
+
 func (h *userHandler) Login(c *gin.Context) {
 	const op = "handler.http.users.Login"
 

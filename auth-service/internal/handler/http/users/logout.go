@@ -7,7 +7,6 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// remove refresh token
 func (h *userHandler) Logout(c *gin.Context) {
 	const op = "handler.http.users.Logout"
 
