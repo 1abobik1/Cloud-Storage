@@ -1,7 +1,6 @@
 package handlerUsers
 
 import (
-	"context"
 	"errors"
 	"log"
 	"net/http"
@@ -12,40 +11,31 @@ import (
 	"github.com/go-playground/validator/v10"
 )
 
-type UserServiceI interface {
-	Register(ctx context.Context, email, password, clientIP string) (accessJWT string, refreshJWT string, err error)
-}
-
-type userHandler struct {
-	userService UserServiceI
-}
-
-func NewUserHandler(userService UserServiceI) *userHandler {
-	return &userHandler{userService: userService}
-}
-
 func (h *userHandler) SignUp(c *gin.Context) {
-	var userDTO dto.UserDTO
+	const op = "handler.http.users.SignUp"
 
-	if err := c.BindJSON(&userDTO); err != nil {
-		log.Printf("Error binding JSON: %v \n", err)
+	var authDTO dto.AuthDTO
+
+	if err := c.BindJSON(&authDTO); err != nil {
+		log.Printf("Error binding JSON: %v location %s\n", err, op)
 		c.Status(http.StatusBadRequest)
 		return
 	}
 
 	validate := validator.New()
-	if err := validate.Struct(userDTO); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid email format or password must be at least 6 characters long"})
+	if err := validate.Struct(authDTO); err != nil {
+		log.Printf("Error: %s, location: %s", ErrValidationEmailOrPassword, op)
+		c.JSON(http.StatusBadRequest, gin.H{"error": ErrValidationEmailOrPassword})
 		return
 	}
 
-	accessToken, refreshToken, err := h.userService.Register(c, userDTO.Email, userDTO.Password, c.ClientIP())
+	accessToken, refreshToken, err := h.userService.Register(c, authDTO.Email, authDTO.Password, authDTO.Platform)
 	if err != nil {
 		if errors.Is(err, storage.ErrUserExists) {
 			c.JSON(http.StatusConflict, gin.H{"error": "User with this email already exists"})
 			return
 		}
-		log.Printf("Error Internal logic during user registration. Email: %s, Error: %v \n", userDTO.Email, err)
+		log.Printf("Error Internal logic during user registration. Email: %s, Error: %v \n", authDTO.Email, err)
 		c.Status(http.StatusInternalServerError)
 		return
 	}

@@ -22,6 +22,7 @@ func main() {
 	r := gin.Default()
 
 	r.POST("/user/signup", userHandler.SignUp)
+	r.POST("/user/login", userHandler.Login)
 	r.Run(cfg.HTTPServer)
 
 }

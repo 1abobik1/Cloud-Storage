@@ -1,0 +1,55 @@
+package serviceUsers
+
+import (
+	"context"
+	"errors"
+	"fmt"
+	"log"
+
+	lib "github.com/1abobik1/Cloud-Storage/internal/lib/jwt"
+	"github.com/1abobik1/Cloud-Storage/internal/storage"
+	"golang.org/x/crypto/bcrypt"
+)
+
+var (
+	ErrInvalidCredentials = errors.New("invalid credentials")
+)
+
+
+func (s *userService) Login(ctx context.Context, email, password, platform string) (accessJWT string, refreshJWT string, err error) {
+	const op = "service.users.Login"
+
+	userModel, err := s.userStorage.FindUser(ctx, email)
+	if err != nil {
+		if errors.Is(err, storage.ErrUserNotFound) {
+			log.Printf("Warning: %v, location %s", err, op)
+			return "", "", err
+		}
+		log.Printf("Error failed to save user: %v, location %s", err, op)
+		return "", "", err
+	}
+
+	if err := bcrypt.CompareHashAndPassword(userModel.Password, []byte(password)); err != nil {
+		log.Printf("Wrong password: %v, location %s", err, op)
+		return "", "", ErrInvalidCredentials
+	}
+
+	accessToken, err := lib.CreateAccessToken(userModel.ID, s.cfg.AccessTokenTTL, s.cfg.AccessTokenSecretKey)
+	if err != nil {
+		log.Printf("Error creating access token: %v, location %s \n", err, op)
+		return "", "", fmt.Errorf("error creating access token: %w", err)
+	}
+
+	refreshToken, err := lib.CreateRefreshToken(userModel.ID, s.cfg.RefreshTokenTTL, s.cfg.RefreshTokenSecretKey)
+	if err != nil {
+		log.Printf("Error creating refresh token: %v, location %s \n", err, op)
+		return "", "", fmt.Errorf("error creating refresh token: %w", err)
+	}
+
+	if err := s.userStorage.UpsertRefreshToken(ctx, refreshToken, userModel.ID, platform); err != nil {
+		log.Printf("Error upserting refresh token in db: %v", err)
+		return "", "", fmt.Errorf("error upserting refresh token in db: %w", err)
+	}
+	
+	return accessToken, refreshToken, nil
+}

@@ -6,30 +6,12 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/1abobik1/Cloud-Storage/internal/config"
 	lib "github.com/1abobik1/Cloud-Storage/internal/lib/jwt"
 	"github.com/1abobik1/Cloud-Storage/internal/storage"
 	"golang.org/x/crypto/bcrypt"
 )
 
-type UsersStorageI interface {
-	SaveUser(ctx context.Context, email string, password []byte) (int, error)
-	SaveRefreshToken(ctx context.Context, refreshToken string, userID int, clientIP string) error
-}
-
-type userService struct {
-	userStorage UsersStorageI
-	cfg         config.Config
-}
-
-func NewUserService(userStorage UsersStorageI, cfg config.Config) *userService {
-	return &userService{
-		userStorage: userStorage,
-		cfg:         cfg,
-	}
-}
-
-func (s *userService) Register(ctx context.Context, email, password, clientIP string) (accessJWT string, refreshJWT string, err error) {
+func (s *userService) Register(ctx context.Context, email, password, platform string) (accessJWT string, refreshJWT string, err error) {
 	const op = "service.users.Register"
 
 	passHash, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
@@ -41,8 +23,8 @@ func (s *userService) Register(ctx context.Context, email, password, clientIP st
 	userID, err := s.userStorage.SaveUser(ctx, email, passHash)
 	if err != nil {
 		if errors.Is(err, storage.ErrUserExists) {
-			log.Printf("Warning user already exists: %v \n", err)
-			return "", "", storage.ErrUserExists
+			log.Printf("Warning: %v \n", err)
+			return "", "", err
 		}
 
 		log.Printf("Error failed to save user: %v \n", err)
@@ -61,10 +43,11 @@ func (s *userService) Register(ctx context.Context, email, password, clientIP st
 		return "", "", fmt.Errorf("error creating refresh token: %w", err)
 	}
 
-	if err := s.userStorage.SaveRefreshToken(ctx, refreshToken, userID, clientIP); err != nil {
-		fmt.Printf("Error saving refresh token: %v", err)
-		return "", "", fmt.Errorf("error saving refresh token: %w", err)
+	if err := s.userStorage.UpsertRefreshToken(ctx, refreshToken, userID, platform); err != nil {
+		log.Printf("Error upserting refresh token in db: %v", err)
+		return "", "", fmt.Errorf("error upserting refresh token in db: %w", err)
 	}
+	
 
 	return accessToken, refreshToken, nil
 }

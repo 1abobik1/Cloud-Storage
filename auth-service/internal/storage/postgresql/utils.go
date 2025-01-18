@@ -19,15 +19,15 @@ func wrapPostgresErrors(err error, op string) error {
 	if errors.As(err, &pqErr) {
 		switch pqErr.Code {
 		case "23505": // Уникальное ограничение
-			return fmt.Errorf("%w, location %s", storage.ErrUserExists, op)
+			return fmt.Errorf("location %s, error: %w", op, storage.ErrUserExists)
 		default:
-			return fmt.Errorf("location %s: error %s: %w", op, pqErr.Code, err)
+			return fmt.Errorf("location %s, error %s: %w", op, pqErr.Code, err)
 		}
 	}
 
 	// Проверяем на sql.ErrNoRows
 	if errors.Is(err, sql.ErrNoRows) {
-		return storage.ErrUserNotFound
+		return fmt.Errorf("location: %s, error: %w", op, storage.ErrUserNotFound)
 	}
 
 	// Общая ошибка, если никакие условия не выполнились

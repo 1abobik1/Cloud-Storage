@@ -6,14 +6,16 @@ CREATE TABLE IF NOT EXISTS auth_users (
     is_activated BOOLEAN DEFAULT FALSE
 );
 
+CREATE TYPE token_platform_enum AS ENUM ('pc-desktop', 'web', 'ios-mobile', 'android-mobile');
+                                                                
 CREATE TABLE IF NOT EXISTS refresh_token (
     id SERIAL PRIMARY KEY,
     token TEXT NOT NULL,
     user_id INT NOT NULL,
-    ip INET NOT NULL,
-    FOREIGN KEY (user_id) REFERENCES auth_users(id) ON DELETE CASCADE
+    platform token_platform_enum NOT NULL,
+    FOREIGN KEY (user_id) REFERENCES auth_users(id) ON DELETE CASCADE,
+    CONSTRAINT unique_user_platform UNIQUE (user_id, platform) 
 );
 
 CREATE INDEX idx_refresh_token_user_id ON  refresh_token (user_id);
-CREATE INDEX idx_refresh_token_ip ON refresh_token (ip);
 CREATE INDEX idx_refresh_token_user_id_token ON refresh_token (user_id, token);

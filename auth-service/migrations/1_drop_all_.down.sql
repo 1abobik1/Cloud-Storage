@@ -1,6 +1,5 @@
 -- Удаление индексов
 DROP INDEX IF EXISTS idx_refresh_token_user_id;
-DROP INDEX IF EXISTS idx_refresh_token_ip;
 DROP INDEX IF EXISTS idx_refresh_token_user_id_token;
 
 -- Удаление таблицы refresh_token

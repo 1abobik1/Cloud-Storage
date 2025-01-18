@@ -10,6 +10,6 @@ type UserDTO struct {
 func (u *UserDTO) ToModel() *models.UserModel {
 	return &models.UserModel{
 		Email:    u.Email,
-		Password: u.Password,
+		Password: []byte(u.Password),
 	}
 }
