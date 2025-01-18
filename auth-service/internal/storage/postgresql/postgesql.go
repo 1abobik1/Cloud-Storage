@@ -45,7 +45,7 @@ func (p *PostgesStorage) UpsertRefreshToken(ctx context.Context, refreshToken st
         ON CONFLICT (user_id, platform) DO UPDATE
         SET token = EXCLUDED.token;
     `
-	
+
 	_, err := p.db.ExecContext(ctx, query, refreshToken, userID, platform)
 	if err != nil {
 		log.Printf("Error saving in postgresql: %s, %v \n", op, err)
@@ -66,4 +66,17 @@ func (p *PostgesStorage) FindUser(ctx context.Context, email string) (models.Use
 	}
 
 	return userModel, nil
+}
+
+func (p *PostgesStorage) DeleteRefreshToken(ctx context.Context, refreshToken string) error {
+	const op = "storage.postgresql.DeleteRefreshToken"
+
+	query := "DELETE FROM refresh_token WHERE token = $1"
+	_, err := p.db.ExecContext(ctx, query, refreshToken)
+	if err != nil {
+		log.Printf("Error delete from refresh_token where token = %s: %v location: %s", refreshToken, err, op)
+		return err
+	}
+
+	return nil
 }

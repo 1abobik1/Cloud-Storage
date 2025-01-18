@@ -23,6 +23,7 @@ func main() {
 
 	r.POST("/user/signup", userHandler.SignUp)
 	r.POST("/user/login", userHandler.Login)
+	r.POST("user/logout", userHandler.Logout)
 	r.Run(cfg.HTTPServer)
 
 }

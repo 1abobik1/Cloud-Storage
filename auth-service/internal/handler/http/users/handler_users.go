@@ -9,6 +9,7 @@ const ErrValidationEmailOrPassword = "invalid email format or password must be a
 type UserServiceI interface {
 	Register(ctx context.Context, email, password, platform string) (accessJWT string, refreshJWT string, err error)
 	Login(ctx context.Context, email, password, platform string) (accessJWT string, refreshJWT string, err error)
+	RevokeRefreshToken(ctx context.Context, refreshToken string) error
 }
 
 type userHandler struct {
