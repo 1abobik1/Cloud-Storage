@@ -6,12 +6,12 @@ import (
 	"fmt"
 	"log"
 
-	lib "github.com/1abobik1/Cloud-Storage/internal/lib/jwt"
 	"github.com/1abobik1/Cloud-Storage/internal/storage"
+	"github.com/1abobik1/Cloud-Storage/internal/utils"
 	"golang.org/x/crypto/bcrypt"
 )
 
-func (s *userService) Register(ctx context.Context, email, password, platform string) (accessJWT string, refreshJWT string, err error) {
+func (s *userService) Register(ctx context.Context, email, password, platform string) (accessJWT string, refreshJWT string, er error) {
 	const op = "service.users.Register"
 
 	passHash, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
@@ -31,13 +31,13 @@ func (s *userService) Register(ctx context.Context, email, password, platform st
 		return "", "", err
 	}
 
-	accessToken, err := lib.CreateAccessToken(userID, s.cfg.AccessTokenTTL, s.cfg.AccessTokenSecretKey)
+	accessToken, err := utils.CreateAccessToken(userID, s.cfg.AccessTokenTTL, s.cfg.AccessTokenSecretKey)
 	if err != nil {
 		log.Printf("Error creating access token: %v \n", err)
 		return "", "", fmt.Errorf("error creating access token: %w", err)
 	}
 
-	refreshToken, err := lib.CreateRefreshToken(userID, s.cfg.RefreshTokenTTL, s.cfg.RefreshTokenSecretKey)
+	refreshToken, err := utils.CreateRefreshToken(userID, s.cfg.RefreshTokenTTL, s.cfg.RefreshTokenSecretKey)
 	if err != nil {
 		log.Printf("Error creating refresh token: %v \n", err)
 		return "", "", fmt.Errorf("error creating refresh token: %w", err)

@@ -80,3 +80,37 @@ func (p *PostgesStorage) DeleteRefreshToken(ctx context.Context, refreshToken st
 
 	return nil
 }
+
+func (p *PostgesStorage) CheckRefreshToken(refreshToken string) (int, error) {
+	const op = "storage.postgresql.CheckRefreshToken"
+
+	query := "SELECT user_id FROM refresh_token WHERE token = $1"
+
+	var userID int
+	err := p.db.QueryRow(query, refreshToken).Scan(&userID)
+	if err != nil {
+		return 0, wrapPostgresErrors(err, op)
+	}
+
+	return userID, nil
+}
+
+func (p *PostgesStorage) UpdateRefreshToken(oldRefreshToken, newRefreshToken string) error {
+	const op = "storage.postgresql.UpdateRefreshToken"
+
+	// SQL-запрос для обновления
+	query := `
+		UPDATE refresh_token
+		SET token = $1
+		WHERE token = $2
+		RETURNING id;
+	`
+
+	var id int
+	err := p.db.QueryRow(query, newRefreshToken, oldRefreshToken).Scan(&id)
+	if err != nil {
+		return wrapPostgresErrors(err, op)
+	}
+
+	return nil
+}
