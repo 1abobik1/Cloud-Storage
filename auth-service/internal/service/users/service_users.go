@@ -3,8 +3,8 @@ package serviceUsers
 import (
 	"context"
 
-	"github.com/1abobik1/Cloud-Storage/internal/config"
-	"github.com/1abobik1/Cloud-Storage/internal/models"
+	"github.com/1abobik1/Cloud-Storage/auth-service/config"
+	"github.com/1abobik1/Cloud-Storage/auth-service/internal/domain/models"
 )
 
 type UsersStorageI interface {

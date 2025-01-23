@@ -5,7 +5,7 @@ import (
 	"net/http"
 	"strings"
 
-	validation "github.com/1abobik1/Cloud-Storage/pkg/auth/validation"
+	validation "github.com/1abobik1/Cloud-Storage/auth-service/pkg/auth/validation"
 	"github.com/gin-gonic/gin"
 )
 

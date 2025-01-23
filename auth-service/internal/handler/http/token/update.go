@@ -4,7 +4,7 @@ import (
 	"log"
 	"net/http"
 
-	"github.com/1abobik1/Cloud-Storage/internal/utils"
+	"github.com/1abobik1/Cloud-Storage/auth-service/internal/utils"
 	"github.com/gin-gonic/gin"
 )
 

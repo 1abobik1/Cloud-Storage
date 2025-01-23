@@ -4,7 +4,7 @@ import (
 	"errors"
 	"log"
 
-	"github.com/1abobik1/Cloud-Storage/pkg/auth/validation"
+	"github.com/1abobik1/Cloud-Storage/auth-service/pkg/auth/validation"
 	"github.com/golang-jwt/jwt/v4"
 )
 

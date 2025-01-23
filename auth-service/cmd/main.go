@@ -1,12 +1,12 @@
 package main
 
 import (
-	"github.com/1abobik1/Cloud-Storage/internal/config"
-	handlerToken "github.com/1abobik1/Cloud-Storage/internal/handler/http/token"
-	handlerUsers "github.com/1abobik1/Cloud-Storage/internal/handler/http/users"
-	serviceToken "github.com/1abobik1/Cloud-Storage/internal/service/token"
-	serviceUsers "github.com/1abobik1/Cloud-Storage/internal/service/users"
-	"github.com/1abobik1/Cloud-Storage/internal/storage/postgresql"
+	"github.com/1abobik1/Cloud-Storage/auth-service/config"
+	handlerToken "github.com/1abobik1/Cloud-Storage/auth-service/internal/handler/http/token"
+	handlerUsers "github.com/1abobik1/Cloud-Storage/auth-service/internal/handler/http/users"
+	serviceToken "github.com/1abobik1/Cloud-Storage/auth-service/internal/service/token"
+	serviceUsers "github.com/1abobik1/Cloud-Storage/auth-service/internal/service/users"
+	"github.com/1abobik1/Cloud-Storage/auth-service/internal/storage/postgresql"
 	"github.com/gin-gonic/gin"
 )
 

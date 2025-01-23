@@ -1,6 +1,6 @@
 package serviceToken
 
-import "github.com/1abobik1/Cloud-Storage/internal/config"
+import "github.com/1abobik1/Cloud-Storage/auth-service/config"
 
 type TokenStorageI interface {
 	CheckRefreshToken(refreshToken string) (int, error)

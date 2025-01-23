@@ -6,8 +6,8 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/1abobik1/Cloud-Storage/internal/storage"
-	"github.com/1abobik1/Cloud-Storage/internal/utils"
+	"github.com/1abobik1/Cloud-Storage/auth-service/internal/storage"
+	"github.com/1abobik1/Cloud-Storage/auth-service/internal/utils"
 	"golang.org/x/crypto/bcrypt"
 )
 

@@ -5,7 +5,7 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/1abobik1/Cloud-Storage/internal/storage"
+	"github.com/1abobik1/Cloud-Storage/auth-service/internal/storage"
 	"github.com/lib/pq"
 )
 

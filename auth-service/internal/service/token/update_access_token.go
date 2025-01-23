@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/1abobik1/Cloud-Storage/internal/utils"
+	"github.com/1abobik1/Cloud-Storage/auth-service/internal/utils"
 )
 
 func (s *tokenService) UpdateAccessToken(refreshToken string) (string, error) {

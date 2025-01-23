@@ -1,6 +1,6 @@
 package dto
 
-import "github.com/1abobik1/Cloud-Storage/internal/models"
+import "github.com/1abobik1/Cloud-Storage/auth-service/internal/domain/models"
 
 type UserDTO struct {
 	Email    string `json:"email" validate:"required,email"`

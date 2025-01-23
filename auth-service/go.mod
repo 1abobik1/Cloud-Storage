@@ -1,4 +1,4 @@
-module github.com/1abobik1/Cloud-Storage
+module github.com/1abobik1/Cloud-Storage/auth-service
 
 go 1.23.1
 

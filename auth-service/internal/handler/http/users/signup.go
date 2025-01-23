@@ -5,9 +5,9 @@ import (
 	"log"
 	"net/http"
 
-	"github.com/1abobik1/Cloud-Storage/internal/dto"
-	"github.com/1abobik1/Cloud-Storage/internal/storage"
-	"github.com/1abobik1/Cloud-Storage/internal/utils"
+	"github.com/1abobik1/Cloud-Storage/auth-service/internal/dto"
+	"github.com/1abobik1/Cloud-Storage/auth-service/internal/storage"
+	"github.com/1abobik1/Cloud-Storage/auth-service/internal/utils"
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
 )

@@ -5,7 +5,7 @@ import (
 	"database/sql"
 	"log"
 
-	"github.com/1abobik1/Cloud-Storage/internal/models"
+	"github.com/1abobik1/Cloud-Storage/auth-service/internal/domain/models"
 )
 
 type PostgesStorage struct {
