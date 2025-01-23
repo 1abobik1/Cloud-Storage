@@ -4,22 +4,18 @@ import (
 	"log"
 	"net/http"
 
+	"github.com/1abobik1/Cloud-Storage/internal/utils"
 	"github.com/gin-gonic/gin"
 )
 
 func (h *userHandler) Logout(c *gin.Context) {
 	const op = "handler.http.users.Logout"
 
-	refreshToken, err := c.Cookie("refresh_token")
+	refreshToken, err := utils.GetRefreshTokenFromCookie(c)
 	if err != nil {
-		log.Printf("Error refresh token not found: %v location %s", err, op)
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "refresh token not found"})
+		log.Printf("Error getting refresh token: %v, location: %s", err, op)
+		c.Status(http.StatusUnauthorized)
 		return
-	}
-
-	if len(refreshToken) == 0 {
-		log.Printf("Error refresh token empty: %s", refreshToken)
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "token cannot be empty"})
 	}
 
 	if err := h.userService.RevokeRefreshToken(c, refreshToken); err != nil {

@@ -7,6 +7,7 @@ import (
 
 	"github.com/1abobik1/Cloud-Storage/internal/dto"
 	"github.com/1abobik1/Cloud-Storage/internal/storage"
+	"github.com/1abobik1/Cloud-Storage/internal/utils"
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
 )
@@ -29,6 +30,12 @@ func (h *userHandler) SignUp(c *gin.Context) {
 		return
 	}
 
+	if err := utils.ValidatePlatform(authDTO.Platform); err != nil {
+		log.Printf("Error: %v, location: %s", err, op)
+		c.JSON(http.StatusBadRequest, gin.H{"error": "platform not supported"})
+		return
+	}
+
 	accessToken, refreshToken, err := h.userService.Register(c, authDTO.Email, authDTO.Password, authDTO.Platform)
 	if err != nil {
 		if errors.Is(err, storage.ErrUserExists) {
@@ -40,15 +47,7 @@ func (h *userHandler) SignUp(c *gin.Context) {
 		return
 	}
 
-	c.SetCookie(
-		"refresh_token",
-		refreshToken,
-		30*24*60*60, // 30days
-		"/",
-		"",
-		false, // для продакшана поставить на true
-		true,
-	)
+	utils.SetRefreshTokenCookie(c, refreshToken)
 
 	c.JSON(http.StatusOK, gin.H{"access_token": accessToken})
 }
