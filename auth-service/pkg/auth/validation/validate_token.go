@@ -1,7 +1,10 @@
 package validation
 
 import (
+	"crypto/rsa"
 	"errors"
+	"fmt"
+	"os"
 
 	"github.com/golang-jwt/jwt/v4"
 )
@@ -9,12 +12,17 @@ import (
 var ErrTokenExpired = errors.New("token is expired")
 var ErrTokenInvalid = errors.New("invalid token")
 
-func ValidateToken(tokenString, secretKey string) (jwt.MapClaims, error) {
+func ValidateToken(tokenString, publicKeyPath string) (jwt.MapClaims, error) {
+	publicKey, err := getPublicKey(publicKeyPath)
+	if err != nil {
+		return nil, fmt.Errorf("error to get public key in file: %s", publicKeyPath)
+	}
+
 	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
-		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
+		if _, ok := token.Method.(*jwt.SigningMethodRSA); !ok {
 			return nil, ErrTokenInvalid
 		}
-		return []byte(secretKey), nil
+		return publicKey, nil
 	})
 
 	if err != nil {
@@ -34,4 +42,17 @@ func ValidateToken(tokenString, secretKey string) (jwt.MapClaims, error) {
 	}
 
 	return claims, nil
+}
+
+func getPublicKey(file string) (*rsa.PublicKey, error) {
+	publicKeyData, err := os.ReadFile(file)
+	if err != nil {
+		return nil, err
+	}
+	publicKey, err := jwt.ParseRSAPublicKeyFromPEM(publicKeyData)
+	if err != nil {
+		return nil, err
+	}
+
+	return publicKey, nil
 }

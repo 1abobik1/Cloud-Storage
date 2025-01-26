@@ -31,13 +31,13 @@ func (s *userService) Register(ctx context.Context, email, password, platform st
 		return "", "", err
 	}
 
-	accessToken, err := utils.CreateAccessToken(userID, s.cfg.AccessTokenTTL, s.cfg.AccessTokenSecretKey)
+	accessToken, err := utils.CreateAccessToken(userID, s.cfg.AccessTokenTTL,s.cfg.PrivateKeyPath)
 	if err != nil {
 		log.Printf("Error creating access token: %v \n", err)
 		return "", "", fmt.Errorf("error creating access token: %w", err)
 	}
 
-	refreshToken, err := utils.CreateRefreshToken(userID, s.cfg.RefreshTokenTTL, s.cfg.RefreshTokenSecretKey)
+	refreshToken, err := utils.CreateRefreshToken(userID, s.cfg.RefreshTokenTTL,s.cfg.PrivateKeyPath)
 	if err != nil {
 		log.Printf("Error creating refresh token: %v \n", err)
 		return "", "", fmt.Errorf("error creating refresh token: %w", err)

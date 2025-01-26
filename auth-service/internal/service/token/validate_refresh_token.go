@@ -12,7 +12,7 @@ import (
 func (s *tokenService) ValidateRefreshToken(refreshToken string) (bool, jwt.MapClaims, error) {
 	const op = "service.token.validation.ValidateRefreshToken"
 
-	claims, err := validation.ValidateToken(refreshToken, string(s.cfg.RefreshTokenSecretKey))
+	claims, err := validation.ValidateToken(refreshToken, s.cfg.PublicKeyPath)
 	if err != nil {
 		if errors.Is(err, validation.ErrTokenExpired) {
 			log.Printf("Warning: token expired, location: %s", op)
