@@ -12,8 +12,7 @@ import (
 type Config struct {
 	StoragePath           string        `env:"STORAGE_PATH" env-required:"true"`
 	HTTPServer            string        `env:"HTTP_SERVER_ADDRESS" env-required:"true"`
-	AccessTokenSecretKey  []byte        `env:"ACCESS_TOKEN_SECRET_KEY" env-required:"true"`
-	RefreshTokenSecretKey []byte        `env:"REFRESH_TOKEN_SECRET_KEY" env-required:"true"`
+	PublicKeyPath string 
 }
 
 func MustLoad() *Config {

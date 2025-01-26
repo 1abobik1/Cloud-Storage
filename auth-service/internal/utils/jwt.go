@@ -31,7 +31,6 @@ func CreateAccessToken(userID int, duration time.Duration, privateKeyPath string
 		},
 	}
 
-	// Создаём новый токен с методом подписи HS256
 	token := jwt.NewWithClaims(jwt.SigningMethodRS256, claims)
 
 	// Подписываем токен секретным ключом
@@ -59,7 +58,6 @@ func CreateRefreshToken(userID int, duration time.Duration, privateKeyPath strin
 		},
 	}
 
-	// Создаём новый токен с методом подписи HS256
 	token := jwt.NewWithClaims(jwt.SigningMethodRS256, claims)
 
 	// Подписываем токен секретным ключом
