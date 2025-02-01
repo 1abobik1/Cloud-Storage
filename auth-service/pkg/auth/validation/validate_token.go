@@ -15,11 +15,11 @@ var ErrTokenInvalid = errors.New("invalid token")
 func ValidateToken(tokenString, publicKeyPath string) (jwt.MapClaims, error) {
 	publicKey, err := getPublicKey(publicKeyPath)
 	if err != nil {
-		return nil, fmt.Errorf("error to get public key in file: %s", publicKeyPath)
+		return nil, fmt.Errorf("error loading public key from file: %s", publicKeyPath)
 	}
 
 	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
-		if _, ok := token.Method.(*jwt.SigningMethodRSA); !ok {
+		if token.Method.Alg() != jwt.SigningMethodRS256.Alg() {
 			return nil, ErrTokenInvalid
 		}
 		return publicKey, nil
@@ -27,9 +27,8 @@ func ValidateToken(tokenString, publicKeyPath string) (jwt.MapClaims, error) {
 
 	if err != nil {
 		var validationError *jwt.ValidationError
-		if errors.As(err, &validationError) && (validationError.Errors&jwt.ValidationErrorExpired != 0) {
-			claims, ok := token.Claims.(jwt.MapClaims)
-			if ok {
+		if errors.As(err, &validationError) && (validationError.Errors&jwt.ValidationErrorExpired != 0) && token != nil {
+			if claims, ok := token.Claims.(jwt.MapClaims); ok {
 				return claims, ErrTokenExpired
 			}
 		}

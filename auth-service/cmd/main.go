@@ -32,6 +32,7 @@ func main() {
 
 	r.POST("/token/update", tokenHandler.TokenUpdate)
 
-	r.Run(cfg.HTTPServer)
-
+	if err := r.Run(cfg.HTTPServer); err != nil {
+		panic(err)
+	}
 }
