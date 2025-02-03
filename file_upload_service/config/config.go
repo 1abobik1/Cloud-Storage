@@ -11,7 +11,6 @@ import (
 )
 
 type Config struct {
-	Env               string `env:"ENV" env-required:"true"`
 	HTTPServer        string `env:"HTTP_SERVER_ADDRESS" env-required:"true"`
 	JWTPublicKeyPath  string `env:"JWT_PUBLIC_KEY_PATH" env-required:"true"`
 	MinIoPort         string `env:"MINIO_PORT" env-required:"true"`
