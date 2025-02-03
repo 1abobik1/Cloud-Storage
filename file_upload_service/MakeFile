@@ -1,14 +1,9 @@
 include .env
 
-# Путь до папки с миграциями
-MIGRATIONS_PATH=./migrations
-
-# Команда для миграции вверх
-pg-migrate:
-	migrate -path $(MIGRATIONS_PATH) -database "$(STORAGE_PATH)" up
-
-pg-down:
-	migrate -path $(MIGRATIONS_PATH) -database "$(STORAGE_PATH)" down
+MINIO_FILES_PATH=C:\minio_files
 
 server-run:
 	go run cmd/main.go --config=.env
+
+minio-run:
+	minio.exe server --console-address ":9001" $(MINIO_FILES_PATH)

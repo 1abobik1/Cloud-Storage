@@ -10,14 +10,13 @@ import (
 )
 
 type Config struct {
-	Env             string `env:"ENV" env-required:"true"`
-	StoragePath     string `env:"STORAGE_PATH" env-required:"true"`
-	GRPCPort        int    `env:"GRPC_PORT" env-required:"true"`
-	PublicKeyPath   string `env:"PUBLIC_KEY_PATH" env-required:"true"`
-	MinIoPort       string `env:"MINIO_PORT" env-required:"true"`
-	AccessKeyID     string `env:"ACCESS_KEY_ID" env-required:"true"`
-	SecretAccessKey string `env:"SECRET_ACCESS_KEY" env-required:"true"`
-	MinIoUseSSL     bool   `env:"MINIO_USE_SSL" env-required:"true"`
+	Env               string `env:"ENV" env-required:"true"`
+	HTTPServer        string `env:"HTTP_SERVER_ADDRESS" env-required:"true"`
+	JWTPublicKeyPath  string `env:"JWT_PUBLIC_KEY_PATH" env-required:"true"`
+	MinIoPort         string `env:"MINIO_PORT" env-required:"true"`
+	MinIoRootUser     string `env:"MINIO_ROOT_USER" env-required:"true"`
+	MinIoRootPassword string `env:"MINIO_ROOT_PASSWORD" env-required:"true"`
+	MinIoUseSSL       bool   `env:"MINIO_USE_SSL" env-required:"true"`
 }
 
 func MustLoad() *Config {
