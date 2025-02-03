@@ -10,7 +10,6 @@ import (
 	"strconv"
 	"strings"
 	"sync"
-	"time"
 
 	"github.com/1abobik1/Cloud-Storage/file_upload_service/config"
 	"github.com/1abobik1/Cloud-Storage/file_upload_service/internal/dto"
@@ -107,7 +106,7 @@ func (m *minioClient) CreateOne(ctx context.Context, file helpers.FileData, user
 	}
 
 	// Получение URL для загруженного объекта
-	url, err := m.mc.PresignedGetObject(ctx, fileCategory, objectName, time.Hour*24*2, nil)
+	url, err := m.mc.PresignedGetObject(ctx, fileCategory, objectName, m.cfg.MinIoURLLifeTime, nil)
 	if err != nil {
 		return "", fmt.Errorf("error when creating the URL for the object %s: %v", file.Name, err)
 	}
@@ -120,66 +119,56 @@ func (m *minioClient) CreateOne(ctx context.Context, file helpers.FileData, user
 // указывающую на неудачные объекты.
 func (m *minioClient) CreateMany(ctx context.Context, data map[string]helpers.FileData, userID int) ([]string, error) {
 	ctx, cancel := context.WithCancel(ctx)
-	defer cancel() // Гарантирует освобождение контекста при выходе из функции
+	defer cancel() // Гарантирует освобождение контекста
 
 	urlCh := make(chan string, len(data))
+	errCh := make(chan error, len(data))
 	var wg sync.WaitGroup
+	var mu sync.Mutex
+	var firstErr error
 
 	for objectID, file := range data {
 		wg.Add(1)
 		go func(objectID string, file helpers.FileData) {
 			defer wg.Done()
 
-			// Если контекст уже отменён, выходим
-			if ctx.Err() != nil {
-				return
-			}
-
-			objectName := generateFileName(userID)
-			metadata := generateUserMetaData(userID)
-
-			fileCategory := GetCategory(file.Data)
-
-			options := minio.PutObjectOptions{
-				ContentType:  file.Format,
-				UserMetadata: metadata,
-			}
-			_, err := m.mc.PutObject(ctx, fileCategory, objectName, bytes.NewReader(file.Data), int64(len(file.Data)), options)
+			url, err := m.CreateOne(ctx, file, userID)
 			if err != nil {
-				cancel() // Отмена всех горутин при ошибке
+				mu.Lock()
+				if firstErr == nil { // Запоминаем только первую ошибку
+					firstErr = err
+					cancel() // Отменяем все горутины
+				}
+				mu.Unlock()
+				errCh <- err
 				return
 			}
 
-			// Проверяем, не отменён ли контекст перед получением URL
-			if ctx.Err() != nil {
-				return
-			}
-
-			url, err := m.mc.PresignedGetObject(ctx, fileCategory, objectName, time.Hour*24*2, nil)
-			if err != nil {
-				cancel()
-				return
-			}
-
-			// Отправка URL, но только если контекст не отменён
+			// Отправляем URL только если контекст не отменён
 			select {
 			case <-ctx.Done():
 				return
-			case urlCh <- url.String():
+			case urlCh <- url:
 			}
 		}(objectID, file)
 	}
 
-	// Ожидание завершения всех горутин и закрытие канала
+	// Ожидаем завершения всех горутин и закрываем каналы
 	go func() {
 		wg.Wait()
 		close(urlCh)
+		close(errCh)
 	}()
 
-	// Собираем URL-адреса
-	urls := make([]string, 0, len(data))
+	// Собираем результаты
+	var urls []string
 	for url := range urlCh {
 		urls = append(urls, url)
+	}
+
+	// Если есть ошибка — возвращаем её
+	if firstErr != nil {
+		return nil, firstErr
 	}
 
 	return urls, nil
@@ -211,7 +200,7 @@ func (m *minioClient) GetOne(ctx context.Context, objectID dto.ObjectID, userID 
 		return "", fmt.Errorf("you don't have access rights to other people's files: %w", ErrForbiddenResource)
 	}
 
-	url, err := m.mc.PresignedGetObject(ctx, objectID.FileCategory, objectID.ObjID, time.Hour*24*2, nil)
+	url, err := m.mc.PresignedGetObject(ctx, objectID.FileCategory, objectID.ObjID, m.cfg.MinIoURLLifeTime, nil)
 	if err != nil {
 		log.Printf("Error: %v, %s", err, op)
 		return "", OperationError{ObjectID: objectID.ObjID, Err: fmt.Errorf("error when getting the URL for the object %s: %w", objectID.ObjID, ErrFileNotFound)}

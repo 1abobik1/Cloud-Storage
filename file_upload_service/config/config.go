@@ -4,6 +4,7 @@ import (
 	"flag"
 	"fmt"
 	"os"
+	"time"
 
 	"github.com/ilyakaznacheev/cleanenv"
 	"github.com/joho/godotenv"
@@ -17,6 +18,7 @@ type Config struct {
 	MinIoRootUser     string `env:"MINIO_ROOT_USER" env-required:"true"`
 	MinIoRootPassword string `env:"MINIO_ROOT_PASSWORD" env-required:"true"`
 	MinIoUseSSL       bool   `env:"MINIO_USE_SSL" env-required:"true"`
+	MinIoURLLifeTime  time.Duration `env:"MINIO_URL_LIFETIME"`
 }
 
 func MustLoad() *Config {
