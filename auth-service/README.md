@@ -67,9 +67,11 @@ openssl rsa -pubout -in private_key.pem -out public_key.pem
 ```sh
 make server-run
 ```
+---
 
 > После запуска сервер будет доступен по адресу `http://localhost:8080`
 
+---
 
 ## 🛠 Технологии
 - **Go** – язык
