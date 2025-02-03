@@ -1,4 +1,4 @@
-#1. Пример .env файла
+1. ##Пример .env файла
 ```
 STORAGE_PATH=postgres://postgres:MYpassword@localhost:5432/auth-service?sslmode=disable
 HTTP_SERVER_ADDRESS=localhost:8080
