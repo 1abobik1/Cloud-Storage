@@ -27,7 +27,7 @@ func (h *userHandler) Login(c *gin.Context) {
 
 	validate := validator.New()
 	if err := validate.Struct(authDTO); err != nil {
-		log.Printf("Error: %s, loacation: %s", ErrValidationEmailOrPassword, op)
+		log.Printf("Error: %s, location: %s", ErrValidationEmailOrPassword, op)
 		c.JSON(http.StatusBadRequest, gin.H{"error": ErrValidationEmailOrPassword})
 		return
 	}
