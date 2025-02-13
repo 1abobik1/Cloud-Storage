@@ -11,13 +11,15 @@ import (
 )
 
 type Config struct {
-	HTTPServer        string `env:"HTTP_SERVER_ADDRESS" env-required:"true"`
-	JWTPublicKeyPath  string `env:"JWT_PUBLIC_KEY_PATH" env-required:"true"`
-	MinIoPort         string `env:"MINIO_PORT" env-required:"true"`
-	MinIoRootUser     string `env:"MINIO_ROOT_USER" env-required:"true"`
-	MinIoRootPassword string `env:"MINIO_ROOT_PASSWORD" env-required:"true"`
-	MinIoUseSSL       bool   `env:"MINIO_USE_SSL" env-required:"true"`
-	MinIoURLLifeTime  time.Duration `env:"MINIO_URL_LIFETIME"`
+	HTTPServer        string        `env:"HTTP_SERVER_ADDRESS" env-required:"true"`
+	JWTPublicKeyPath  string        `env:"JWT_PUBLIC_KEY_PATH" env-required:"true"`
+	MinIoPort         string        `env:"MINIO_PORT" env-required:"true"`
+	MinIoRootUser     string        `env:"MINIO_ROOT_USER" env-required:"true"`
+	MinIoRootPassword string        `env:"MINIO_ROOT_PASSWORD" env-required:"true"`
+	MinIoUseSSL       bool          `env:"MINIO_USE_SSL" env-required:"true"`
+	MinIoURLLifeTime  time.Duration `env:"MINIO_URL_LIFETIME" env-required:"true"`
+	RedisURLLifeTime  time.Duration `env:"REDIS_URL_LIFETIME" env-required:"true"`
+	RedisPort         string        `env:"REDIS_PORT" env-required:"true"`
 }
 
 func MustLoad() *Config {

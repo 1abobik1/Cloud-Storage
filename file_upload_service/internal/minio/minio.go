@@ -17,6 +17,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/minio/minio-go/v7"
 	"github.com/minio/minio-go/v7/pkg/credentials"
+	"github.com/redis/go-redis/v9"
 )
 
 var (
@@ -26,28 +27,26 @@ var (
 
 // Client интерфейс для взаимодействия с Minio
 type Client interface {
-	InitMinio(minioPort, minioRootUser, minioRootPassword string, minioUseSSL bool) error           // Метод для инициализации подключения к Minio
-	CreateOne(ctx context.Context, file helpers.FileData, userID int) (string, error)               // Метод для создания одного объекта в бакете Minio
-	CreateMany(ctx context.Context, data map[string]helpers.FileData, userID int) ([]string, error) // Метод для создания нескольких объектов в бакете Minio
-	GetOne(ctx context.Context, objectID dto.ObjectID, userID int) (string, error)                  // Метод для получения одного объекта из бакета Minio
-	GetMany(ctx context.Context, objectIDs []dto.ObjectID, userID int) ([]string, []error)          // Метод для получения нескольких объектов из бакета Minio
-	DeleteOne(ctx context.Context, objectID dto.ObjectID, userID int) error                         // Метод для удаления одного объекта из бакета Minio
-	DeleteMany(ctx context.Context, objectIDs []dto.ObjectID, userID int) []error                   // Метод для удаления нескольких объектов из бакета Minio
+	InitMinio(minioPort, minioRootUser, minioRootPassword string, minioUseSSL bool) error // Метод для инициализации подключения к Minio
+	CreateOne(ctx context.Context, file helpers.FileData, userID int) (string, error)                                // Метод для создания одного объекта в бакете Minio
+	CreateMany(ctx context.Context, data map[string]helpers.FileData, userID int) ([]string, error)                  // Метод для создания нескольких объектов в бакете Minio
+	GetOne(ctx context.Context, objectID dto.ObjectID, userID int) (string, error)                                   // Метод для получения одного объекта из бакета Minio
+	GetMany(ctx context.Context, objectIDs []dto.ObjectID, userID int) ([]string, []error)                           // Метод для получения нескольких объектов из бакета Minio
+	DeleteOne(ctx context.Context, objectID dto.ObjectID, userID int) error                                          // Метод для удаления одного объекта из бакета Minio
+	DeleteMany(ctx context.Context, objectIDs []dto.ObjectID, userID int) []error                                    // Метод для удаления нескольких объектов из бакета Minio
 }
 
-// minioClient реализация интерфейса MinioClient
 type minioClient struct {
-	mc  *minio.Client // Клиент Minio
-	cfg config.Config
+	mc          *minio.Client 
+	cfg         config.Config
+	redisClient *redis.Client
 }
 
-// NewMinioClient создает новый экземпляр Minio Client
-func NewMinioClient(cfg config.Config) Client {
-	return &minioClient{cfg: cfg} // Возвращает новый экземпляр minioClient с указанным именем бакета
+func NewMinioClient(cfg config.Config, redisClient *redis.Client) Client {
+	return &minioClient{cfg: cfg, redisClient: redisClient} 
 }
 
 func (m *minioClient) InitMinio(minioPort, minioRootUser, minioRootPassword string, minioUseSSL bool) error {
-	// Создание контекста с возможностью отмены операции
 	ctx := context.Background()
 
 	// Подключение к Minio с использованием имени пользователя и пароля
@@ -85,6 +84,7 @@ func (m *minioClient) InitMinio(minioPort, minioRootUser, minioRootPassword stri
 // В случае успешной загрузки данных в бакет, метод возвращает nil, иначе возвращает ошибку.
 // Все операции выполняются в контексте задачи.
 func (m *minioClient) CreateOne(ctx context.Context, file helpers.FileData, userID int) (string, error) {
+	const op = "location internal.minio.minio.CreateOne"
 
 	objectName := generateFileName(userID)
 
@@ -109,6 +109,13 @@ func (m *minioClient) CreateOne(ctx context.Context, file helpers.FileData, user
 	url, err := m.mc.PresignedGetObject(ctx, fileCategory, objectName, m.cfg.MinIoURLLifeTime, nil)
 	if err != nil {
 		return "", fmt.Errorf("error when creating the URL for the object %s: %v", file.Name, err)
+	}
+
+	// save in redis
+	cacheKey := getRedisKey(objectName)
+	err = m.redisClient.Set(ctx, cacheKey, url.String(), m.cfg.RedisURLLifeTime).Err()
+	if err != nil {
+		log.Printf("Failed to save redis, file URL: %v, %s", err, op)
 	}
 
 	return url.String(), nil
@@ -179,6 +186,17 @@ func (m *minioClient) CreateMany(ctx context.Context, data map[string]helpers.Fi
 func (m *minioClient) GetOne(ctx context.Context, objectID dto.ObjectID, userID int) (string, error) {
 	const op = "location internal.minio.GetOne"
 
+	// search url in Redis
+	cacheKey := getRedisKey(objectID.ObjID)
+	redisURL, err := m.redisClient.Get(ctx, cacheKey).Result()
+	if err == nil {
+		log.Printf("The data is taken from the redis cache, %s", op)
+		return redisURL, nil
+	} else if err != redis.Nil {
+		return "", err
+	}
+
+	// get Metadata in minio
 	objInfo, err := m.mc.StatObject(ctx, objectID.FileCategory, objectID.ObjID, minio.StatObjectOptions{})
 	if err != nil {
 		log.Printf("Error: %v, %s \n", err, op)
@@ -200,13 +218,20 @@ func (m *minioClient) GetOne(ctx context.Context, objectID dto.ObjectID, userID 
 		return "", fmt.Errorf("you don't have access rights to other people's files: %w", ErrForbiddenResource)
 	}
 
-	url, err := m.mc.PresignedGetObject(ctx, objectID.FileCategory, objectID.ObjID, m.cfg.MinIoURLLifeTime, nil)
+	// generate url in minio if not in redis
+	minioURL, err := m.mc.PresignedGetObject(ctx, objectID.FileCategory, objectID.ObjID, m.cfg.MinIoURLLifeTime, nil)
 	if err != nil {
 		log.Printf("Error: %v, %s", err, op)
 		return "", OperationError{ObjectID: objectID.ObjID, Err: fmt.Errorf("error when getting the URL for the object %s: %w", objectID.ObjID, ErrFileNotFound)}
 	}
 
-	return url.String(), nil
+	// save in redis
+	err = m.redisClient.Set(ctx, cacheKey, minioURL.String(), m.cfg.RedisURLLifeTime).Err()
+	if err != nil {
+		log.Printf("Failed to save redis, file URL: %v, %s", err, op)
+	}
+
+	return minioURL.String(), nil
 }
 
 func (m *minioClient) GetMany(ctx context.Context, objectIDs []dto.ObjectID, userID int) ([]string, []error) {
@@ -282,6 +307,13 @@ func (m *minioClient) GetMany(ctx context.Context, objectIDs []dto.ObjectID, use
 func (m *minioClient) DeleteOne(ctx context.Context, objectID dto.ObjectID, userID int) error {
 	const op = "location internal.minio.DeleteOne"
 
+	cacheKey := getRedisKey(objectID.ObjID)
+	//deleting data in redis
+	err := m.redisClient.Del(ctx, cacheKey).Err()
+	if err != nil {
+		log.Printf("Warning deletion did not work, %s,  details: %v", op, err)
+	}
+
 	objInfo, err := m.mc.StatObject(ctx, objectID.FileCategory, objectID.ObjID, minio.StatObjectOptions{})
 	if err != nil {
 		log.Printf("Error: %v, %s \n", err, op)
@@ -303,6 +335,7 @@ func (m *minioClient) DeleteOne(ctx context.Context, objectID dto.ObjectID, user
 		return fmt.Errorf("you don't have access rights to other people's files: %w", ErrForbiddenResource)
 	}
 
+	// deleting data in minio if not in redis
 	err = m.mc.RemoveObject(ctx, objectID.FileCategory, objectID.ObjID, minio.RemoveObjectOptions{})
 	if err != nil {
 		log.Printf("error: %v, %s", err, op)
@@ -361,6 +394,10 @@ func (m *minioClient) DeleteMany(ctx context.Context, objectIDs []dto.ObjectID, 
 	}
 
 	return nil
+}
+
+func getRedisKey(ObjID string) string {
+	return fmt.Sprintf("file_url:%v", ObjID)
 }
 
 // Генерируеn уникальное имя файла
