@@ -23,7 +23,8 @@ func MustLoad() *Config {
 	path := getConfigPath()
 
 	if path == "" {
-		panic("config path is empty")
+		fmt.Println("CONFIG_PATH is not set, using default .env")
+		path = ".env"
 	}
 
 	if _, err := os.Stat(path); os.IsNotExist(err) {
@@ -45,8 +46,11 @@ func MustLoad() *Config {
 }
 
 func getConfigPath() string {
+	if envPath := os.Getenv("CONFIG_PATH"); envPath != "" {
+		return envPath
+	}
+	
 	var res string
-
 	flag.StringVar(&res, "config", "", "path to config file")
 	flag.Parse()
 
