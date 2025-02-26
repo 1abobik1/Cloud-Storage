@@ -24,12 +24,52 @@ services:
     depends_on:
       - db
     ports:
-      - 9080:8080
+      - 8080:8080
+    networks:
+      - app-network
+
+  file-upload-service:
+    container_name: file_upload_service
+    build:
+      context: ./file_upload_service
+      dockerfile: Dockerfile
+    env_file:
+      - ${ENV_FILE_UPLOAD_SERVICE}
+    extra_hosts:
+      - "localhost:host-gateway"
+    ports:
+      - 8081:8081
+    depends_on:
+      - minio
+      - redis
+    networks:
+      - app-network
+
+  minio:
+    container_name: minio
+    image: minio/minio
+    env_file:
+      - ${ENV_FILE_UPLOAD_SERVICE}
+    volumes:
+      - minio_data:/data
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    command: server /data --console-address ":9001"
+    networks:
+      - app-network
+
+  redis:
+    container_name: redis
+    image: redis:latest
+    ports:
+      - 6379:6379
     networks:
       - app-network
 
 volumes:
   db_data:
+  minio_data:
 
 networks:
   app-network:
