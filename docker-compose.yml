@@ -33,8 +33,6 @@ services:
     build:
       context: ./file_upload_service
       dockerfile: Dockerfile
-    env_file:
-      - ./file_upload_service/.env
     extra_hosts:
       - "localhost:host-gateway"
     ports:
