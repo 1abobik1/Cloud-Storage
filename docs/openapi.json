@@ -1,0 +1,320 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "Cloud Storage API",
+    "version": "1.0"
+  },
+  "paths": {
+    "/user/signup": {
+      "post": {
+        "tags": [
+          "Auth"
+        ],
+        "summary": "Регистрация пользователя",
+        "description": "Регистрирует нового пользователя. При успешной регистрации возвращается access_token в теле ответа, а refresh_token устанавливается в cookie.\n",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "email",
+                  "password",
+                  "platform"
+                ],
+                "properties": {
+                  "email": {
+                    "type": "string",
+                    "example": "123exmaple123@mail.ru"
+                  },
+                  "password": {
+                    "type": "string",
+                    "example": "1234567"
+                  },
+                  "platform": {
+                    "type": "string",
+                    "enum": [
+                      "pc-desktop",
+                      "web",
+                      "ios-mobile",
+                      "android-mobile"
+                    ],
+                    "example": "ios-mobile"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Регистрация успешна. Возвращается access_token, а refresh_token устанавливается в cookie.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "access_token": {
+                      "type": "string",
+                      "example": "eyJhbGciOiJIUzI1NiIsInR..."
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Некорректные данные запроса или неподдерживаемая платформа.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string",
+                      "example": "platform not supported"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Пользователь с данным email уже существует.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string",
+                      "example": "User with this email already exists"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Внутренняя ошибка сервера."
+          }
+        }
+      }
+    },
+    "/user/login": {
+      "post": {
+        "tags": [
+          "Auth"
+        ],
+        "summary": "Вход пользователя",
+        "description": "Авторизация зарегистрированного пользователя. При успешном входе возвращается access_token в теле ответа, а refresh_token устанавливается в cookie.\n",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "email",
+                  "password",
+                  "platform"
+                ],
+                "properties": {
+                  "email": {
+                    "type": "string",
+                    "example": "123exmaple123@mail.ru"
+                  },
+                  "password": {
+                    "type": "string",
+                    "example": "1234567"
+                  },
+                  "platform": {
+                    "type": "string",
+                    "enum": [
+                      "pc-desktop",
+                      "web",
+                      "ios-mobile",
+                      "android-mobile"
+                    ],
+                    "example": "android-mobile"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Успешная авторизация. Возвращается access_token, а refresh_token устанавливается в cookie.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "access_token": {
+                      "type": "string",
+                      "example": "eyJhbGciOiJIUzI1NiIsInR..."
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Некорректный запрос или неподдерживаемая платформа.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string",
+                      "example": "Bad request"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Неверный email или пароль.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string",
+                      "example": "incorrect password or email"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Пользователь не найден.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string",
+                      "example": "user not found"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Внутренняя ошибка сервера."
+          }
+        }
+      }
+    },
+    "/token/update": {
+      "post": {
+        "tags": [
+          "Auth"
+        ],
+        "summary": "Обновление токенов",
+        "description": "Обновляет access_token, используя refresh_token, который передается через cookie. Если refresh_token просрочен, сервис обновит его и вернет новый access_token. На фронтенде нужно сделать middleware, который будет перенаправлять ответы 401 на этот endpoint(кроме localhost:8080/user/logout разумеется, так как пользователь вышел и ему нет смысла обновлять свой токен)\n",
+        "parameters": [
+          {
+            "in": "cookie",
+            "name": "refresh_token",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Refresh токен, передаваемый в cookie."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Токены успешно обновлены. Возвращается новый access_token, а refresh_token устанавливается в cookie.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "access_token": {
+                      "type": "string",
+                      "example": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Ошибка аутентификации — отсутствует или недействителен refresh_token.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string",
+                      "example": "Unauthorized"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Внутренняя ошибка сервера."
+          }
+        }
+      }
+    },
+    "/user/logout": {
+      "post": {
+        "tags": [
+          "Auth"
+        ],
+        "summary": "Завершение сеанса пользователя (Logout)",
+        "description": "Отзывается refresh_token, переданный через cookie, и завершает сеанс пользователя. При успешном выходе refresh_token удаляется из cookie.\n",
+        "parameters": [
+          {
+            "in": "cookie",
+            "name": "refresh_token",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Refresh токен, который будет отозван."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Пользователь успешно вышел из системы."
+          },
+          "401": {
+            "description": "Отсутствует или недействителен refresh_token.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string",
+                      "example": "Unauthorized"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Внутренняя ошибка сервера."
+          }
+        }
+      }
+    }
+  }
+}

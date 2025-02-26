@@ -65,7 +65,7 @@ REDIS_PORT=redis:6379
 
 Запустите в терминале команду:
 ```bash
-docker-compose up --build
+docker-compose up
 ```
 
 Сервисы будут запущены со следующими адресами:
