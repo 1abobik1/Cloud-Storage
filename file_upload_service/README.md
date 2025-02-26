@@ -1,4 +1,4 @@
-# ЛОКАЛЬНЫЙ ЗАПУСКЕ(БЕЗ ДОКЕРА) File_Uploader Service
+# ЛОКАЛЬНЫЙ ЗАПУСК(БЕЗ ДОКЕРА) File_Uploader Service
 
 ## 📌 Описание
 
