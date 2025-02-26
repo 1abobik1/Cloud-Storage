@@ -6,7 +6,6 @@ import (
 	"errors"
 	"fmt"
 	"log"
-	"net/http"
 	"strconv"
 	"strings"
 	"sync"
@@ -86,11 +85,11 @@ func (m *minioClient) InitMinio(minioPort, minioRootUser, minioRootPassword stri
 func (m *minioClient) CreateOne(ctx context.Context, file helpers.FileData, userID int) (string, error) {
 	const op = "location internal.minio.minio.CreateOne"
 
-	objectName := generateFileName(userID)
+	ObjID := generateFileID(userID)
 
 	metadata := generateUserMetaData(userID)
 
-	fileCategory := GetCategory(file.Data)
+	fileCategory := GetCategory(file.Format)
 
 	options := minio.PutObjectOptions{
 		ContentType:  file.Format,
@@ -100,19 +99,19 @@ func (m *minioClient) CreateOne(ctx context.Context, file helpers.FileData, user
 	log.Printf("METADATA: %v", options.UserMetadata)
 
 	// загрузка в объектное хранилище minio
-	_, err := m.mc.PutObject(ctx, fileCategory, objectName, bytes.NewReader(file.Data), int64(len(file.Data)), options)
+	_, err := m.mc.PutObject(ctx, fileCategory, ObjID, bytes.NewReader(file.Data), int64(len(file.Data)), options)
 	if err != nil {
 		return "", fmt.Errorf("error when creating an object %s: %v", file.Name, err)
 	}
 
 	// Получение URL для загруженного объекта
-	url, err := m.mc.PresignedGetObject(ctx, fileCategory, objectName, m.cfg.MinIoURLLifeTime, nil)
+	url, err := m.mc.PresignedGetObject(ctx, fileCategory, ObjID, m.cfg.MinIoURLLifeTime, nil)
 	if err != nil {
 		return "", fmt.Errorf("error when creating the URL for the object %s: %v", file.Name, err)
 	}
 
 	// save in redis
-	cacheKey := getRedisKey(objectName)
+	cacheKey := getRedisKey(ObjID, fileCategory)
 	err = m.redisClient.Set(ctx, cacheKey, url.String(), m.cfg.RedisURLLifeTime).Err()
 	if err != nil {
 		log.Printf("Failed to save redis, file URL: %v, %s", err, op)
@@ -187,7 +186,7 @@ func (m *minioClient) GetOne(ctx context.Context, objectID dto.ObjectID, userID 
 	const op = "location internal.minio.GetOne"
 
 	// search url in Redis
-	cacheKey := getRedisKey(objectID.ObjID)
+	cacheKey := getRedisKey(objectID.ObjID, objectID.FileCategory)
 	redisURL, err := m.redisClient.Get(ctx, cacheKey).Result()
 	if err == nil {
 		log.Printf("The data is taken from the redis cache, %s", op)
@@ -307,7 +306,7 @@ func (m *minioClient) GetMany(ctx context.Context, objectIDs []dto.ObjectID, use
 func (m *minioClient) DeleteOne(ctx context.Context, objectID dto.ObjectID, userID int) error {
 	const op = "location internal.minio.DeleteOne"
 
-	cacheKey := getRedisKey(objectID.ObjID)
+	cacheKey := getRedisKey(objectID.ObjID, objectID.FileCategory)
 	//deleting data in redis
 	err := m.redisClient.Del(ctx, cacheKey).Err()
 	if err != nil {
@@ -396,12 +395,12 @@ func (m *minioClient) DeleteMany(ctx context.Context, objectIDs []dto.ObjectID, 
 	return nil
 }
 
-func getRedisKey(ObjID string) string {
-	return fmt.Sprintf("file_url:%v", ObjID)
+func getRedisKey(ObjID, fileType string) string {
+	return fmt.Sprintf("ObjID:%v-file_type:%v", ObjID, fileType)
 }
 
 // Генерируеn уникальное имя файла
-func generateFileName(userID int) string {
+func generateFileID(userID int) string {
 	return fmt.Sprintf("%d/%s", userID, uuid.New().String())
 }
 
@@ -411,9 +410,7 @@ func generateUserMetaData(userID int) map[string]string {
 	}
 }
 
-func GetCategory(fileData []byte) string {
-	// Определяем MIME-тип файла по его содержимому
-	contentType := http.DetectContentType(fileData)
+func GetCategory(contentType string) string {
 
 	switch {
 	case strings.HasPrefix(contentType, "image/"):

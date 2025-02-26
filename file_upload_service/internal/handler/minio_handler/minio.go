@@ -215,7 +215,7 @@ func (h *Handler) GetOne(c *gin.Context) {
 			c.JSON(http.StatusNotFound, erresponse.ErrorResponse{
 				Status:  http.StatusNotFound,
 				Error:   "File not found",
-				Details: fmt.Sprintf("%v not found, file category: %s", err.Error(), objectID.FileCategory),
+				Details: fmt.Sprintf("%v, file category: %s", err.Error(), objectID.FileCategory),
 			})
 			return
 		}
