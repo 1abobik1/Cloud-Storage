@@ -3,22 +3,28 @@ package postgresql
 import (
 	"context"
 	"database/sql"
+	"fmt"
 	"log"
 
 	"github.com/1abobik1/Cloud-Storage/auth-service/internal/domain/models"
+	"github.com/1abobik1/Cloud-Storage/auth-service/internal/storage"
 )
 
 type PostgesStorage struct {
 	db *sql.DB
 }
 
-func NewPostgresStorage(storagePath string) (*PostgesStorage, error) {
+func NewPostgresStorageProd(storagePath string) (*PostgesStorage, error) {
 	db, err := sql.Open("postgres", storagePath)
 	if err != nil {
 		return nil, err
 	}
 
 	return &PostgesStorage{db: db}, nil
+}
+
+func NewPostgresForTesting(db *sql.DB) *PostgesStorage {
+	return &PostgesStorage{db: db}
 }
 
 func (p *PostgesStorage) SaveUser(ctx context.Context, email string, password []byte) (int, error) {
@@ -72,10 +78,20 @@ func (p *PostgesStorage) DeleteRefreshToken(ctx context.Context, refreshToken st
 	const op = "storage.postgresql.DeleteRefreshToken"
 
 	query := "DELETE FROM refresh_token WHERE token = $1"
-	_, err := p.db.ExecContext(ctx, query, refreshToken)
+	res, err := p.db.ExecContext(ctx, query, refreshToken)
 	if err != nil {
-		log.Printf("Error delete from refresh_token where token = %s: %v location: %s", refreshToken, err, op)
-		return err
+		log.Printf("Error deleting refresh_token where token = %s: %v location: %s", refreshToken, err, op)
+		return wrapPostgresErrors(err, op)
+	}
+
+	rowsAffected, err := res.RowsAffected()
+	if err != nil {
+		log.Printf("Error getting affected rows: %v location: %s", err, op)
+		return wrapPostgresErrors(err, op)
+	}
+
+	if rowsAffected == 0 {
+		return fmt.Errorf("location %s: %w", op, storage.ErrTokenNotFound)
 	}
 
 	return nil

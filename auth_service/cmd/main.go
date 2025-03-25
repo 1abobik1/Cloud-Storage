@@ -13,7 +13,7 @@ import (
 func main() {
 	cfg := config.MustLoad()
 
-	postgresStorage, err := postgresql.NewPostgresStorage(cfg.StoragePath)
+	postgresStorage, err := postgresql.NewPostgresStorageProd(cfg.StoragePath)
 	if err != nil {
 		panic("postgres connection error")
 	}
