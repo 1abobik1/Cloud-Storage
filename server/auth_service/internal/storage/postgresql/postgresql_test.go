@@ -1,4 +1,3 @@
-// storage/postgresql/storage_test.go
 package postgresql_test
 
 import (
@@ -280,7 +279,7 @@ func TestCheckRefreshToken_TokenNotFound(t *testing.T) {
 	assert.Error(t, err)
 	assert.Equal(t, 0, user_id)
 	assert.ErrorIs(t, err, storage.ErrTokenNotFound)
-	
+
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
 

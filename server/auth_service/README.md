@@ -11,8 +11,11 @@
 Создайте файл `.env` в корневой директории и добавьте следующие параметры, пример:
 
 ```ini
-STORAGE_PATH=postgres://postgres:MYpassword@localhost:5432/auth-service?sslmode=disable
-HTTP_SERVER_ADDRESS=localhost:8080
+POSTGRES_USER=postgres
+POSTGRES_PASSWORD=MYpassword
+POSTGRES_DB=auth-service
+STORAGE_PATH=postgres://postgres:MYpassword@db:5432/auth-service?sslmode=disable
+HTTP_SERVER_ADDRESS=0.0.0.0:8080
 ACCESS_TOKEN_TTL=15m
 REFRESH_TOKEN_TTL=720h
 PUBLIC_KEY_PATH=public_key.pem
@@ -66,6 +69,10 @@ openssl rsa -pubout -in private_key.pem -out public_key.pem
 Запустите сервер командой:
 ```sh
 make server-run
+```
+Или в случаи "make: *** No rule to make target 'server-run'.  Stop."
+```sh
+make -f Makefile server-run
 ```
 ---
 

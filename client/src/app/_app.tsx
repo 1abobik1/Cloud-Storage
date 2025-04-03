@@ -1,3 +1,4 @@
+'use client'
 import type { AppProps } from 'next/app'
 import React, { createContext } from 'react';
 import Store from "@/app/api/store/store";

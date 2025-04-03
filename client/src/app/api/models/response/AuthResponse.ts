@@ -1,7 +1,8 @@
-import { IUser } from "../IUser";
+import {IUser} from "../IUser";
 
-export interface AuthResponce {
-    accessToken:string;
-    refreshToken:string;
-    user:IUser;
+export interface AuthResponse {
+    access: string;
+    is_superuser: boolean;
+    refreshToken: string;
+    user: IUser;
 }
