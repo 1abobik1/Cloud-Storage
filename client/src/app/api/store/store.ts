@@ -5,7 +5,7 @@ import axios from 'axios';
 import {AuthResponse} from "../models/response/AuthResponse";
 import {API_URL} from "@/app/api/http/index";
 import {jwtDecode} from 'jwt-decode';
-import { platform } from "os";
+
 
 interface JwtPayload {
     user_id: number;
@@ -84,7 +84,7 @@ export default class Store {
         }
     }
 
-    async registration(username: string, email: string, password: string) {
+    async signup(username: string, email: string, password: string) {
         try {
             const response = await AuthService.signup(username, email, password);
             localStorage.setItem('token', response.data.access);

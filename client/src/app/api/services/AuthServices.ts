@@ -5,15 +5,15 @@ import {AuthResponse} from "@/app/api/models/response/AuthResponse";
 
 export default class AuthService {
     static async login(email: string, password: string,platform:string): Promise<AxiosResponse<AuthResponse>> {
-        return $api.post<AuthResponse>('/api/user/login', {email, password,platform})
+        return $api.post<AuthResponse>('/user/login', {email, password,platform})
     }
 
     static async signup(email: string, password: string,platform:string): Promise<AxiosResponse<AuthResponse>> {
-        return $api.post<AuthResponse>('/api/user/signup', {email, password,platform})
+        return $api.post<AuthResponse>('/user/signup', {email, password,platform})
     }
 
     static async logout(): Promise<void> {
-        return $api.post('/api/user/logout')
+        return $api.post('/user/logout')
     }
     static async verify(email: string) {
         // @ts-ignore

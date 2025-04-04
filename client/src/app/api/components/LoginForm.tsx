@@ -77,7 +77,7 @@ const LoginForm = () => {
           <div className="flex items-center justify-between">
             <button
               type="button"
-              onClick={() => store.registration( email, password ,platform)}
+              onClick={() => store.signup( email, password ,platform)}
               className="w-full px-4 py-2 text-sm font-medium text-black bg-green-600 border border-transparent rounded-md shadow-sm hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
             >
               Регистрация

@@ -12,6 +12,7 @@ export const Context = createContext<State>({
  })
 
 export default function MyApp({ Component, pageProps }: AppProps) {
+  
 <Context.Provider value={{store}}>
   return <Component {...pageProps} />
 </Context.Provider>

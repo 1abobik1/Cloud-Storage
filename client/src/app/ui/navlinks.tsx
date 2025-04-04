@@ -1,25 +1,29 @@
 'use client';
 
 import {
-  UserGroupIcon,
   HomeIcon,
-  DocumentDuplicateIcon,
+  Squares2X2Icon,
+  BellIcon,
+  MagnifyingGlassIcon
 } from '@heroicons/react/24/outline';
+
 
 import clsx from 'clsx';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 
 const links = [
-  { name: 'Home', href: '/cloud', icon: HomeIcon },
-  {name: 'Clouds',href: '/cloud/posts',icon: DocumentDuplicateIcon,},
-  { name: 'Settings', href: '/cloud/settings', icon: UserGroupIcon },
-  { name: 'Your posts', href: '/cloud/', icon: UserGroupIcon },
+  { name: 'Home', href: '/cloud/home', icon: HomeIcon },
+  {name: 'Workspaces',href: '/cloud/workspaces',icon: Squares2X2Icon,},
+  { name: 'Search', href: '/cloud/search', icon: MagnifyingGlassIcon },
+  { name: 'Notification', href: '/cloud/notifications', icon:BellIcon  }
   
 ];
 
 export default function NavLinks() {
   const pathname = usePathname();
+ 
+ 
   return (
     <>
       {links.map((link) => {
@@ -28,10 +32,11 @@ export default function NavLinks() {
           <Link
           key={link.name}
           href={link.href}
+          
           className={clsx(
-            'flex h-[48px] grow items-center justify-center gap-2 rounded-md bg-slate-600 p-3 text-sm font-medium hover:bg-slate-300 hover:text-white md:flex-none md:justify-start md:p-2 md:px-3',
+            'flex h-[36px]  grow items-center justify-center text-gray-500 gap-2 rounded-md text-sm font-medium  hover:text-blue-500 md:flex-none md:justify-start md:p-2 md:px-3',
             {
-              'bg-slate-900 text-white': pathname === link.href,
+              'bg-blue-300 text-blue-500': pathname === link.href,
             },
           )}
         >

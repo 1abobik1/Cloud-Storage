@@ -2,11 +2,11 @@ import axios from 'axios';
 import {AuthResponse} from "@/app/api/models/response/AuthResponse";
 
 
-export const API_URL = `http://localhost:8080`
+export const API_URL = `/api`
 
 const $api = axios.create({
     withCredentials: true,
-   
+    baseURL: API_URL
 })
 
 $api.interceptors.request.use((config) => {
