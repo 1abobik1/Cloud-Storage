@@ -15,6 +15,7 @@ export default class AuthService {
     static async logout(): Promise<void> {
         return $api.post('/user/logout')
     }
+    
     static async verify(email: string) {
         // @ts-ignore
         return authApi.post<CodeResponse>('/verify-email/', {email})

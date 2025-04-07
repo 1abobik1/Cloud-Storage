@@ -19,9 +19,12 @@ export default function Layout({ children }: { children: React.ReactNode }) {
         <SideBar />
       </div>
       
-      <Header/>
-      <div className="flex-grow p-6 md:overflow-y-auto md:p-12">{children}</div>
+      <div className='flex flex-col flex-grow w-100%'>
+        <Header/>
+        
       
+      <div className="flex-grow p-6 md:overflow-y-auto md:p-12">{children}</div>
+      </div>
     </div>
     
   );
