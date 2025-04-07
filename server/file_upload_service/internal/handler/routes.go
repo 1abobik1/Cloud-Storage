@@ -9,12 +9,12 @@ import (
 // Services структура всех сервисов, которые используются в хендлерах
 // Это нужно чтобы мы могли использовать внутри хендлеров эти самые сервисы
 type Services struct {
-	minioService minio.Client // Сервис у нас только один - minio, мы планируем его использовать, поэтому передаем
+	minioService minio.Client 
 }
 
 // Handlers структура всех хендлеров, которые используются для обозначения действия в роутах
 type Handlers struct {
-	minioHandler minioHandler.Handler // Пока у нас только один роут
+	minioHandler minioHandler.Handler 
 }
 
 // NewHandler создает экземпляр Handler с предоставленными сервисами
@@ -32,7 +32,6 @@ func NewHandler(
 // RegisterRoutes - метод регистрации всех роутов в системе
 func (h *Handlers) RegisterRoutes(router *gin.Engine) {
 
-	// Здесь мы обозначили все эндпоинты системы с соответствующими хендлерами
 	minioRoutes := router.Group("/files")
 	{
 		minioRoutes.POST("/one", h.minioHandler.CreateOne)
