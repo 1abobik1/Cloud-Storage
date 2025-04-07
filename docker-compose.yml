@@ -5,10 +5,10 @@ services:
     container_name: auth_db
     image: postgres:14-alpine
     env_file:
-      - ./auth_service/.env
+      - ./server/auth_service/.env
     volumes:
       - db_data:/var/lib/postgresql/data
-      - ./docker-entrypoint-initdb.d:/docker-entrypoint-initdb.d
+      - ./server/docker-entrypoint-initdb.d:/docker-entrypoint-initdb.d
     ports:
       - 5433:5432
     networks:
@@ -17,7 +17,7 @@ services:
   auth-service:
     container_name: auth_service
     build:
-      context: ./auth_service
+      context: ./server/auth_service
       dockerfile: Dockerfile
     environment:
       CONFIG_PATH: .env
@@ -31,15 +31,17 @@ services:
   file-upload-service:
     container_name: file_upload_service
     build:
-      context: ./file_upload_service
+      context: ./server/file_upload_service
       dockerfile: Dockerfile
     extra_hosts:
       - "localhost:host-gateway"
     ports:
       - 8081:8081
     depends_on:
-      - minio
-      - redis
+      minio:
+        condition: service_healthy
+      redis:
+        condition: service_started
     networks:
       - app-network
 
@@ -47,7 +49,7 @@ services:
     container_name: minio
     image: minio/minio
     env_file:
-      - ./file_upload_service/.env
+      - ./server/file_upload_service/.env
     volumes:
       - minio_data:/data
     ports:
@@ -56,6 +58,12 @@ services:
     command: server /data --console-address ":9001"
     networks:
       - app-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/ready"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
 
   redis:
     container_name: redis
