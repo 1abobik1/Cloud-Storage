@@ -6,7 +6,6 @@ import {AuthResponse} from "../models/response/AuthResponse";
 import {API_URL} from "@/app/api/http/index";
 import {jwtDecode} from 'jwt-decode';
 
-
 interface JwtPayload {
     user_id: number;
     exp: number;
@@ -26,6 +25,7 @@ const isUserSuperuser = (): boolean => {
     }
     return false;
 };
+
 
 export default class Store {
     user = {} as IUser;
@@ -63,9 +63,9 @@ export default class Store {
     async login(email: string, password: string,platform: string) {
         try {
             const response = await AuthService.login(email, password,platform);
+            console.log(response)
             localStorage.setItem('token', response.data.access);
             this.setAuth(true);
-            this.setSuperUser(isUserSuperuser());
             this.setUser(response.data.user);
         } catch (e) {
             // @ts-ignore
@@ -76,6 +76,7 @@ export default class Store {
     async verify(email: string) {
         try {
             const response = await AuthService.verify(email);
+            console.log(response)
             this.setCode(response.data.code);
             return Promise.resolve();
         } catch (e) {
@@ -87,18 +88,30 @@ export default class Store {
     async signup(username: string, email: string, password: string) {
         try {
             const response = await AuthService.signup(username, email, password);
+            console.log(response)
             localStorage.setItem('token', response.data.access);
             this.setAuth(true);
             this.setUser(response.data.user);
         } catch (e) {
             // @ts-ignore
             console.log(e.response?.data?.message);
+        
+        if (e.response?.status === 409) {
+           
+            alert('Аккаунт на эту почту уже зарегистрированы.');
+           
+          } else {
+           
+            console.error(e);
+            alert('Произошла ошибка при регистрации');
+          }
         }
     }
 
     async logout() {
         try {
             const response = await AuthService.logout();
+            console.log(response)
             localStorage.removeItem('token');
             this.setAuth(false);
             this.setUser({} as IUser);
@@ -111,15 +124,16 @@ export default class Store {
         this.setLoading(true);
         try {
             const response = await axios.post<AuthResponse>(
-                `${API_URL}/refresh/`,
+                `${API_URL}/token/update`,
                 {},
                 {
                     withCredentials: true
                 }
             );
+            console.log(response)
             localStorage.setItem('token', response.data.access);
             this.setAuth(true);
-            this.setSuperUser(isUserSuperuser());
+            
             this.setUser(response.data.user);
             return Promise.resolve();
         } catch (e: any) {

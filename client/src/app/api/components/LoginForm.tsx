@@ -2,7 +2,7 @@
 
 import React, { useContext, useState } from 'react';
 import { Context } from '@/app/_app';
-
+import {observer} from "mobx-react-lite";
 const LoginForm = () => {
   const [platform, setPlatform] = useState('');
   const [email, setEmail] = useState('');
@@ -89,4 +89,4 @@ const LoginForm = () => {
   );
 };
 
-export default LoginForm;
+export default observer(LoginForm);
