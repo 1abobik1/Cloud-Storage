@@ -1,5 +1,5 @@
 'use client';
-
+import ReCAPTCHA from 'react-google-recaptcha';
 import React, { useContext, useState } from 'react';
 import { Context } from '@/app/_app';
 import {observer} from "mobx-react-lite";
@@ -8,7 +8,9 @@ const LoginForm = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const { store } = useContext(Context);
-
+  const handleCaptcha = (value: string | null) => {
+    console.log("CAPTCHA value:", value); 
+  };
   return (
     <div className="flex items-center justify-center min-h-screen bg-gray-100">
       <div className="w-full max-w-md p-8 space-y-6 bg-white rounded-lg shadow-md">
@@ -63,6 +65,14 @@ const LoginForm = () => {
               <option value="ios-mobile">iOS</option>
               <option value="android-mobile">Android</option>
             </select>
+
+        {/* Тут капча важно */}
+            <ReCAPTCHA
+        sitekey="6LffSw4rAAAAAENeTm2aejDbLWa2QvbO8eOkjRlL"
+        onChange={handleCaptcha}
+      />
+
+
           </div>
 
           <div className="flex items-center justify-between">
