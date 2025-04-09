@@ -39,6 +39,7 @@ func (h *Handlers) RegisterRoutes(router *gin.Engine) {
 
 		minioRoutes.GET("/one", h.minioHandler.GetOne)
 		minioRoutes.GET("/many", h.minioHandler.GetMany)
+		minioRoutes.GET("/all", h.minioHandler.GetAll)
 
 		minioRoutes.DELETE("/one", h.minioHandler.DeleteOne)
 		minioRoutes.DELETE("/many", h.minioHandler.DeleteMany)
