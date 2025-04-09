@@ -1,8 +1,8 @@
 'use client';
 
-import Link from 'next/link';
-import React, { useState, useContext, useEffect } from 'react';
-import { Context } from '@/app/_app'; // 👈 импорт контекста
+
+import React, { useState, useContext } from 'react';
+import { Context } from '@/app/_app'; 
 import { useRouter } from 'next/navigation';
 import Image from 'next/image'
 

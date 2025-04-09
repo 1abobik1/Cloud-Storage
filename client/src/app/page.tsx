@@ -1,5 +1,5 @@
 'use client'
-import Link from "next/link";
+
 import { useContext, useState, useEffect } from "react";
 import UserService from "@/app/api/services/UserServices";
 import { Context } from "@/app/_app";
@@ -10,7 +10,7 @@ import { useRouter } from 'next/navigation';
 
 function Home() {
   const { store } = useContext(Context);
-  const router = useRouter(); // ✅ выносим вверх, чтобы вызывался всегда
+  const router = useRouter(); 
   const [users, setUsers] = useState<IUser[]>([]);
 
   useEffect(() => {

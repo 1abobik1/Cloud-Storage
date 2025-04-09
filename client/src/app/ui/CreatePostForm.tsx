@@ -1,7 +1,7 @@
 'use client'
 import React, { useState } from 'react';
 
-import { createPost } from '@/app/lib/posts';
+import { createPost } from '@/app/lib/photo';
 
 const CreatePostForm: React.FC = () => {
   const [title, setTitle] = useState('');
