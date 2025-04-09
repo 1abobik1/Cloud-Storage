@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"path/filepath"
 	"strconv"
 	"strings"
 	"sync"
@@ -26,23 +27,24 @@ var (
 
 // Client интерфейс для взаимодействия с Minio
 type Client interface {
-	InitMinio(minioPort, minioRootUser, minioRootPassword string, minioUseSSL bool) error // Метод для инициализации подключения к Minio
-	CreateOne(ctx context.Context, file helpers.FileData, userID int) (string, error)                                // Метод для создания одного объекта в бакете Minio
-	CreateMany(ctx context.Context, data map[string]helpers.FileData, userID int) ([]string, error)                  // Метод для создания нескольких объектов в бакете Minio
-	GetOne(ctx context.Context, objectID dto.ObjectID, userID int) (string, error)                                   // Метод для получения одного объекта из бакета Minio
-	GetMany(ctx context.Context, objectIDs []dto.ObjectID, userID int) ([]string, []error)                           // Метод для получения нескольких объектов из бакета Minio
-	DeleteOne(ctx context.Context, objectID dto.ObjectID, userID int) error                                          // Метод для удаления одного объекта из бакета Minio
-	DeleteMany(ctx context.Context, objectIDs []dto.ObjectID, userID int) []error                                    // Метод для удаления нескольких объектов из бакета Minio
+	InitMinio(minioPort, minioRootUser, minioRootPassword string, minioUseSSL bool) error           // Метод для инициализации подключения к Minio
+	CreateOne(ctx context.Context, file helpers.FileData, userID int) (string, error)               // Метод для создания одного объекта в бакете Minio
+	CreateMany(ctx context.Context, data map[string]helpers.FileData, userID int) ([]string, error) // Метод для создания нескольких объектов в бакете Minio
+	GetOne(ctx context.Context, objectID dto.ObjectID, userID int) (string, error)                  // Метод для получения одного объекта из бакета Minio
+	GetMany(ctx context.Context, objectIDs []dto.ObjectID, userID int) ([]string, []error)          // Метод для получения нескольких объектов из бакета Minio
+	GetAll(ctx context.Context, t string, userID int) ([]string, []error)                           // Метод для получения всех объектов из конкретного бакета Minio для конкретного пользователя
+	DeleteOne(ctx context.Context, objectID dto.ObjectID, userID int) error                         // Метод для удаления одного объекта из бакета Minio
+	DeleteMany(ctx context.Context, objectIDs []dto.ObjectID, userID int) []error                   // Метод для удаления нескольких объектов из бакета Minio
 }
 
 type minioClient struct {
-	mc          *minio.Client 
+	mc          *minio.Client
 	cfg         config.Config
 	redisClient *redis.Client
 }
 
 func NewMinioClient(cfg config.Config, redisClient *redis.Client) Client {
-	return &minioClient{cfg: cfg, redisClient: redisClient} 
+	return &minioClient{cfg: cfg, redisClient: redisClient}
 }
 
 func (m *minioClient) InitMinio(minioPort, minioRootUser, minioRootPassword string, minioUseSSL bool) error {
@@ -85,8 +87,11 @@ func (m *minioClient) InitMinio(minioPort, minioRootUser, minioRootPassword stri
 func (m *minioClient) CreateOne(ctx context.Context, file helpers.FileData, userID int) (string, error) {
 	const op = "location internal.minio.minio.CreateOne"
 
-	ObjID := generateFileID(userID)
-
+	// получение расширения файла
+	ext := getFileExtension(file.Name)
+	// генерация file_id
+	ObjID := generateFileID(userID, ext)
+	// создание метаданных для удобного хранения в minio
 	metadata := generateUserMetaData(userID)
 
 	fileCategory := GetCategory(file.Format)
@@ -231,6 +236,60 @@ func (m *minioClient) GetOne(ctx context.Context, objectID dto.ObjectID, userID 
 	}
 
 	return minioURL.String(), nil
+}
+
+// GetAll получает все объекты из указанного бакета (t соответствует типу файла, например, "photo")
+// для заданного пользователя. Он использует префикс "<userID>/" для фильтрации объектов.
+// Для каждого найденного объекта генерируется предварительно подписанный URL, который кешируется в Redis.
+func (m *minioClient) GetAll(ctx context.Context, t string, userID int) ([]string, []error) {
+
+	prefix := fmt.Sprintf("%d/", userID)
+
+	// Список объектов из бакета t, удовлетворяющих префиксу
+	objectCh := m.mc.ListObjects(ctx, t, minio.ListObjectsOptions{
+		Prefix:    prefix,
+		Recursive: true,
+	})
+
+	var (
+		urls []string
+		errs []error
+	)
+
+	// Для каждого объекта получаем предварительно подписанный URL и добавляем его в список.
+	for object := range objectCh {
+		if object.Err != nil {
+			log.Printf("Error listing object: %v", object.Err)
+			errs = append(errs, object.Err)
+			continue
+		}
+
+		// Для каждого объекта пытаемся получить URL из Redis, если его нет — генерируем заново.
+		cacheKey := getRedisKey(object.Key, t)
+		cachedURL, err := m.redisClient.Get(ctx, cacheKey).Result()
+		var urlStr string
+		if err == nil {
+			log.Printf("Cache hit for object %s", object.Key)
+			urlStr = cachedURL
+		} else {
+			// Если в кеше не найдено, генерируем URL через MinIO
+			presignedURL, err := m.mc.PresignedGetObject(ctx, t, object.Key, m.cfg.MinIoURLLifeTime, nil)
+			if err != nil {
+				log.Printf("Error generating presigned URL for object %s: %v", object.Key, err)
+				errs = append(errs, err)
+				continue
+			}
+			urlStr = presignedURL.String()
+			// Записываем URL в Redis с заданным TTL
+			err = m.redisClient.Set(ctx, cacheKey, urlStr, m.cfg.RedisURLLifeTime).Err()
+			if err != nil {
+				log.Printf("Failed to cache URL for object %s: %v", object.Key, err)
+			}
+		}
+		urls = append(urls, urlStr)
+	}
+
+	return urls, errs
 }
 
 func (m *minioClient) GetMany(ctx context.Context, objectIDs []dto.ObjectID, userID int) ([]string, []error) {
@@ -399,9 +458,14 @@ func getRedisKey(ObjID, fileType string) string {
 	return fmt.Sprintf("ObjID:%v-file_type:%v", ObjID, fileType)
 }
 
-// Генерируеn уникальное имя файла
-func generateFileID(userID int) string {
-	return fmt.Sprintf("%d/%s", userID, uuid.New().String())
+func getFileExtension(fileName string) string {
+	ext := filepath.Ext(fileName) 
+	return strings.TrimPrefix(ext, ".")
+}
+
+func generateFileID(userID int, fileExt string) string {
+	fileExt = strings.TrimPrefix(fileExt, ".")
+	return fmt.Sprintf("%d/%s.%s", userID, uuid.New().String(), fileExt)
 }
 
 func generateUserMetaData(userID int) map[string]string {
@@ -411,13 +475,12 @@ func generateUserMetaData(userID int) map[string]string {
 }
 
 func GetCategory(contentType string) string {
-
 	switch {
-	case strings.HasPrefix(contentType, "image/"):
+	case strings.HasPrefix(contentType, "image/") || contentType == "photo":
 		return "photo"
-	case strings.HasPrefix(contentType, "video/"):
+	case strings.HasPrefix(contentType, "video/") || contentType == "video":
 		return "video"
-	case strings.HasPrefix(contentType, "text/"):
+	case strings.HasPrefix(contentType, "text/") || contentType == "text":
 		return "text"
 	default:
 		return "unknown"

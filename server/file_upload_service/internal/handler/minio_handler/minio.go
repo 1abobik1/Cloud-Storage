@@ -311,6 +311,66 @@ func (h *Handler) GetMany(c *gin.Context) {
 	})
 }
 
+// Метод GetAll для получения всех объектов из конкретного бакета Minio для конкретного пользователя
+func (h *Handler) GetAll(c *gin.Context) {
+	const op = "location internal.handler.minio_handler.minio.GetAll"
+
+	userID, err := pkg.GetUserID(c)
+	if err != nil {
+		log.Printf("Errors: %v", err)
+		c.JSON(http.StatusBadRequest, gin.H{"error": "the user's ID was not found in the token."})
+		return
+	}
+
+	t := c.Query("type")
+
+	if t != "photo" && t != "unknown" && t != "video" && t != "text" {
+		log.Print("Error: the passed type in the query parameter. It can only be one of these types {photo, unknown, video, text}")
+		c.JSON(http.StatusBadRequest, gin.H{"error": "the passed type in the query parameter. It can only be one of these types {photo, unknown, video, text}"})
+		return
+	} 
+
+	// Используем сервис MinIO для получения ссылок на объекты по их идентификаторам
+	links, errs := h.minioService.GetAll(c, t, userID)
+	for _, err := range errs {
+		if err != nil {
+			log.Printf("Error: %v,  %s", err, op)
+
+			if errors.Is(err, minio.ErrFileNotFound) {
+				c.JSON(http.StatusNotFound, erresponse.ErrorResponse{
+					Status:  http.StatusNotFound,
+					Error:   "File not found",
+					Details: fmt.Sprintf("%v", err.Error()),
+				})
+				return
+			}
+
+			if errors.Is(err, minio.ErrForbiddenResource) {
+				c.JSON(http.StatusForbidden, erresponse.ErrorResponse{
+					Status:  http.StatusForbidden,
+					Error:   "access to the requested resource is prohibited",
+					Details: err.Error(),
+				})
+				return
+			}
+
+			c.JSON(http.StatusInternalServerError, erresponse.ErrorResponse{
+				Status:  http.StatusInternalServerError,
+				Error:   "Enable to get many objects",
+				Details: err,
+			})
+			return
+		}
+	}
+
+	// Возвращаем успешный ответ с URL-адресами полученных файлов
+	c.JSON(http.StatusOK, gin.H{
+		"status":  http.StatusOK,
+		"message": "Files received successfully",
+		"data":    links, // URL-адреса полученных файлов
+	})
+}
+
 // DeleteOne обработчик для удаления одного объекта из бакета Minio по его идентификатору.
 func (h *Handler) DeleteOne(c *gin.Context) {
 	const op = "location internal.handler.minio_handler.minio.DeleteOne"
