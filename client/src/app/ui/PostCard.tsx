@@ -6,18 +6,17 @@ import Link from 'next/link';
 interface PostCardProps {
   post: Post;
   onDelete:(id:number) =>  Promise<void>;
-  onEdit:(id:number)=>Promise<void>;
+  onEdit:(id:number)=>void;
 }
 
 
 
 const PostCard: React.FC<PostCardProps> = ({ post, onDelete, onEdit}) => {
   return (
-  <div className="bg-white shadow-md rounded-lg p-4 mb-4 hover:bg-gray-100 transition">
+  <div className="bg-white shadow-md rounded-lg p-4 mb-4 hover:bg-gray-100 transition border-b">
     <div className='w-[50%]'>
       <Link href={`/cloud/posts/${post.id}`}>
           <h1 className="font-bold mb-2 text-fuchsia-700 text-2xl">{post.title}</h1>
-          <p className="text-black line-clamp-1">{post.body}</p>
            </Link>
           
        <Link href={`/cloud/createUpdatePosts/${post.id}`}>Редактировать </Link>

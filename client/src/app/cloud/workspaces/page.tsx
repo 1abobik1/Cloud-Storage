@@ -26,7 +26,7 @@ const handleDeletePost = async (id:number) =>{
   }
 }
 
-const handleEditPost = (id: number) => {
+const handleEditPost = (id: number): void => {
   setEditingPostId(id);
 };
 

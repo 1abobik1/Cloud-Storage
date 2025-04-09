@@ -1,0 +1,9 @@
+include .env
+
+MINIO_FILES_PATH=C:\minio_files
+
+server-run:
+	go run cmd/main.go --config=.env
+
+minio-run:
+	minio.exe server --console-address ":9001" $(MINIO_FILES_PATH)
