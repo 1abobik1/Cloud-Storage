@@ -11,6 +11,138 @@
     }
   ],
   "paths": {
+    "/files/all": {
+      "get": {
+        "summary": "Получить все файлы по типу",
+        "description": "Получение всех файлов конкретного типа из MinIO. Нужно передать в query параметрах type. Для доступа нужно передать access токен(который на фронтенде должен храниться в local storage). access токен нужно передавать в HTTP-заголовке Authorization, в следующем виде, пример  ``` Authorization Bearer <твой_access_token> ``` ",
+        "parameters": [
+          {
+            "name": "type",
+            "in": "query",
+            "description": "Тип файлов для выборки. Допустимые значения: photo, video, text, unknown",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "photo",
+                "video",
+                "text",
+                "unknown"
+              ],
+              "example": "text"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Файлы получены успешно",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "type": "integer",
+                      "example": 200
+                    },
+                    "message": {
+                      "type": "string",
+                      "example": "Files received successfully"
+                    },
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "type": "string",
+                        "example": "http://minio-server/path/to/file1.jpg"
+                      }
+                    }
+                  }
+                },
+                "example": {
+                  "status": 200,
+                  "message": "Files received successfully",
+                  "data": [
+                    "http://minio-server/user1/text/file1.txt",
+                    "http://minio-server/user1/text/file2.txt"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Неверный запрос",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "examples": {
+                  "invalidType": {
+                    "value": {
+                      "status": 400,
+                      "error": "Invalid type parameter",
+                      "details": "The type parameter must be one of: photo, video, text, unknown"
+                    }
+                  },
+                  "missingUserId": {
+                    "value": {
+                      "status": 400,
+                      "error": "User ID not found",
+                      "details": "The user's ID was not found in the token"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Доступ запрещён",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "status": 403,
+                  "error": "Access forbidden",
+                  "details": "Access to the requested resource is prohibited"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Файлы не найдены",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "status": 404,
+                  "error": "Files not found",
+                  "details": "No files of requested type found for user"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Внутренняя ошибка сервера",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "status": 500,
+                  "error": "Internal server error",
+                  "details": "Unable to get files from storage"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/files/one": {
       "post": {
         "summary": "Загрузить один файл",
