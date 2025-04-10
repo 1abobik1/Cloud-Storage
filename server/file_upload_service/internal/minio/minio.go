@@ -32,7 +32,7 @@ type Client interface {
 	CreateMany(ctx context.Context, data map[string]helpers.FileData, userID int) ([]string, error) // Метод для создания нескольких объектов в бакете Minio
 	GetOne(ctx context.Context, objectID dto.ObjectID, userID int) (string, error)                  // Метод для получения одного объекта из бакета Minio
 	GetMany(ctx context.Context, objectIDs []dto.ObjectID, userID int) ([]string, []error)          // Метод для получения нескольких объектов из бакета Minio
-	GetAll(ctx context.Context, t string, userID int) ([]string, []error)                           // Метод для получения всех объектов из конкретного бакета Minio для конкретного пользователя
+	GetAll(ctx context.Context, t string, userID int) ([][]string, []error)                           // Метод для получения всех объектов из конкретного бакета Minio для конкретного пользователя
 	DeleteOne(ctx context.Context, objectID dto.ObjectID, userID int) error                         // Метод для удаления одного объекта из бакета Minio
 	DeleteMany(ctx context.Context, objectIDs []dto.ObjectID, userID int) []error                   // Метод для удаления нескольких объектов из бакета Minio
 }
@@ -241,7 +241,7 @@ func (m *minioClient) GetOne(ctx context.Context, objectID dto.ObjectID, userID 
 // GetAll получает все объекты из указанного бакета (t соответствует типу файла, например, "photo")
 // для заданного пользователя. Он использует префикс "<userID>/" для фильтрации объектов.
 // Для каждого найденного объекта генерируется предварительно подписанный URL, который кешируется в Redis.
-func (m *minioClient) GetAll(ctx context.Context, t string, userID int) ([]string, []error) {
+func (m *minioClient) GetAll(ctx context.Context, t string, userID int) ([][]string, []error) {
 
 	prefix := fmt.Sprintf("%d/", userID)
 
@@ -252,7 +252,7 @@ func (m *minioClient) GetAll(ctx context.Context, t string, userID int) ([]strin
 	})
 
 	var (
-		urls []string
+		urls [][]string
 		errs []error
 	)
 
@@ -267,10 +267,11 @@ func (m *minioClient) GetAll(ctx context.Context, t string, userID int) ([]strin
 		// Для каждого объекта пытаемся получить URL из Redis, если его нет — генерируем заново.
 		cacheKey := getRedisKey(object.Key, t)
 		cachedURL, err := m.redisClient.Get(ctx, cacheKey).Result()
-		var urlStr string
+		var urlStr []string
 		if err == nil {
 			log.Printf("Cache hit for object %s", object.Key)
-			urlStr = cachedURL
+			urlStr = append(urlStr, object.Key)
+			urlStr = append(urlStr, cachedURL)
 		} else {
 			// Если в кеше не найдено, генерируем URL через MinIO
 			presignedURL, err := m.mc.PresignedGetObject(ctx, t, object.Key, m.cfg.MinIoURLLifeTime, nil)
@@ -279,7 +280,8 @@ func (m *minioClient) GetAll(ctx context.Context, t string, userID int) ([]strin
 				errs = append(errs, err)
 				continue
 			}
-			urlStr = presignedURL.String()
+			urlStr = append(urlStr, object.Key)
+			urlStr = append(urlStr, presignedURL.String())
 			// Записываем URL в Redis с заданным TTL
 			err = m.redisClient.Set(ctx, cacheKey, urlStr, m.cfg.RedisURLLifeTime).Err()
 			if err != nil {
