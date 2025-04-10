@@ -3,7 +3,7 @@
   "info": {
     "title": "MinIO File Upload API",
     "version": "1.0.0",
-    "description": "API для загрузки, получения и удаления файлов в облачном хранилище MinIO."
+    "description": "API для загрузки, получения и удаления файлов в облачном хранилище MinIO. Для доступа к методам требуется передавать access токен в заголовке `Authorization` в формате: ``` Authorization: Bearer <твой_access_token> ```\n"
   },
   "servers": [
     {
@@ -11,142 +11,13 @@
     }
   ],
   "paths": {
-    "/files/all": {
-      "get": {
-        "summary": "Получить все файлы по типу",
-        "description": "Получение всех файлов конкретного типа из MinIO. Нужно передать в query параметрах type. Для доступа нужно передать access токен(который на фронтенде должен храниться в local storage). access токен нужно передавать в HTTP-заголовке Authorization, в следующем виде, пример  ``` Authorization Bearer <твой_access_token> ``` ",
-        "parameters": [
-          {
-            "name": "type",
-            "in": "query",
-            "description": "Тип файлов для выборки. Допустимые значения: photo, video, text, unknown",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "enum": [
-                "photo",
-                "video",
-                "text",
-                "unknown"
-              ],
-              "example": "text"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Файлы получены успешно",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "status": {
-                      "type": "integer",
-                      "example": 200
-                    },
-                    "message": {
-                      "type": "string",
-                      "example": "Files received successfully"
-                    },
-                    "data": {
-                      "type": "array",
-                      "items": {
-                        "type": "string",
-                        "example": "http://minio-server/path/to/file1.jpg"
-                      }
-                    }
-                  }
-                },
-                "example": {
-                  "status": 200,
-                  "message": "Files received successfully",
-                  "data": [
-                    "http://minio-server/user1/text/file1.txt",
-                    "http://minio-server/user1/text/file2.txt"
-                  ]
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "Неверный запрос",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                },
-                "examples": {
-                  "invalidType": {
-                    "value": {
-                      "status": 400,
-                      "error": "Invalid type parameter",
-                      "details": "The type parameter must be one of: photo, video, text, unknown"
-                    }
-                  },
-                  "missingUserId": {
-                    "value": {
-                      "status": 400,
-                      "error": "User ID not found",
-                      "details": "The user's ID was not found in the token"
-                    }
-                  }
-                }
-              }
-            }
-          },
-          "403": {
-            "description": "Доступ запрещён",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                },
-                "example": {
-                  "status": 403,
-                  "error": "Access forbidden",
-                  "details": "Access to the requested resource is prohibited"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Файлы не найдены",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                },
-                "example": {
-                  "status": 404,
-                  "error": "Files not found",
-                  "details": "No files of requested type found for user"
-                }
-              }
-            }
-          },
-          "500": {
-            "description": "Внутренняя ошибка сервера",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                },
-                "example": {
-                  "status": 500,
-                  "error": "Internal server error",
-                  "details": "Unable to get files from storage"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
     "/files/one": {
       "post": {
+        "tags": [
+          "Files"
+        ],
         "summary": "Загрузить один файл",
-        "description": "Загрузка одного файла в MinIO. Ожидается form-data с параметром \"file\" в postman. Для доступа нужно передать access токен(который на фронтенде должен храниться в local storage). access токен нужно передавать в HTTP-заголовке Authorization, в следующем виде, пример  ``` Authorization Bearer <твой_access_token> ``` ",
+        "description": "Загрузка одного файла в MinIO. Ожидается form-data с параметром \"file\".  Файл будет обработан согласно внутренней логике и сохранён в соответствующем бакете.\n",
         "requestBody": {
           "required": true,
           "content": {
@@ -169,7 +40,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/SuccessResponse"
+                  "$ref": "#/components/schemas/SuccessResponseOne"
                 }
               }
             }
@@ -197,8 +68,11 @@
         }
       },
       "get": {
+        "tags": [
+          "Files"
+        ],
         "summary": "Получить один файл",
-        "description": "Получение URL загруженного файла по двум query-параметрам: id и type. Для доступа нужно передать access токен(который на фронтенде должен храниться в local storage). access токен нужно передавать в HTTP-заголовке Authorization, в следующем виде, пример ``` Authorization Bearer <твой_access_token> ``` ",
+        "description": "Получение предварительно подписанного URL для доступа к загруженному файлу. Необходимы два query-параметра: `id` (идентификатор файла) и `type` (тип файла: photo, video, text, unknown).\n",
         "parameters": [
           {
             "name": "id",
@@ -212,7 +86,7 @@
           {
             "name": "type",
             "in": "query",
-            "description": "Тип файла. Допустимые значения: photo, video, text, unknown.",
+            "description": "Тип файла. Допустимые значения: photo, video, text, unknown.\n",
             "required": true,
             "schema": {
               "type": "string",
@@ -231,7 +105,17 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/SuccessResponse"
+                  "$ref": "#/components/schemas/SuccessResponseOne"
+                },
+                "example": {
+                  "status": 200,
+                  "message": "File received successfully",
+                  "file_data": {
+                    "name": "5k_photo.jpg",
+                    "created_at": "2025-04-10T10:20:23.891169366Z",
+                    "obj_id": "7/e57bb3b2-7a5e-4d83-8681-facadfcaecd5.jpg",
+                    "url": "http://localhost:9000/photo/7/e57bb3b2-7a5e-4d83-8681-facadfcaecd5.jpg?..."
+                  }
                 }
               }
             }
@@ -279,8 +163,11 @@
         }
       },
       "delete": {
+        "tags": [
+          "Files"
+        ],
         "summary": "Удалить один файл",
-        "description": "Удаление одного файла в MinIO по query-параметрам id и type. Для доступа нужно передать access токен(который на фронтенде должен храниться в local storage). access токен нужно передавать в HTTP-заголовке Authorization, в следующем виде, пример ``` Authorization Bearer <твой_access_token> ``` ",
+        "description": "Удаление файла из MinIO по query-параметрам `id` и `type`.\n",
         "parameters": [
           {
             "name": "id",
@@ -294,7 +181,7 @@
           {
             "name": "type",
             "in": "query",
-            "description": "Тип файла. Допустимые значения: photo, video, text, unknown.",
+            "description": "Тип файла. Допустимые значения: photo, video, text, unknown.\n",
             "required": true,
             "schema": {
               "type": "string",
@@ -313,7 +200,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/SuccessResponse"
+                  "$ref": "#/components/schemas/SuccessResponseSimple"
                 }
               }
             }
@@ -361,10 +248,120 @@
         }
       }
     },
+    "/files/all": {
+      "get": {
+        "tags": [
+          "Files"
+        ],
+        "summary": "Получить все файлы по типу",
+        "description": "Получение всех файлов пользователя определённого типа. Query-параметр `type` указывает тип файлов (photo, video, text, unknown). Для доступа требуется access токен (заголовок Authorization).\n",
+        "parameters": [
+          {
+            "name": "type",
+            "in": "query",
+            "description": "Тип файлов для выборки. Допустимые значения: photo, video, text, unknown.\n",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "photo",
+                "video",
+                "text",
+                "unknown"
+              ],
+              "example": "photo"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Файлы получены успешно",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "type": "integer",
+                      "example": 200
+                    },
+                    "message": {
+                      "type": "string",
+                      "example": "Files received successfully"
+                    },
+                    "file_data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/FileResponse"
+                      }
+                    }
+                  }
+                },
+                "example": {
+                  "status": 200,
+                  "message": "Files received successfully",
+                  "file_data": [
+                    {
+                      "name": "5k_photo.jpg",
+                      "created_at": "2025-04-10T10:20:23.891169366Z",
+                      "obj_id": "7/e57bb3b2-7a5e-4d83-8681-facadfcaecd5.jpg",
+                      "url": "http://localhost:9000/photo/7/e57bb3b2-7a5e-4d83-8681-facadfcaecd5.jpg?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=minioadmin%2F20250410%2Fus-east-1%2Fs3%2Faws4_request&X-Amz-Date=20250410T102023Z&X-Amz-Expires=28800&X-Amz-SignedHeaders=host&X-Amz-Signature=c8e3c84c34e1b3a69300132ad91761a1a8602e9294e46830031eccb9464dc9fc"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Неверный запрос",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Доступ запрещён",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Файлы не найдены",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Внутренняя ошибка сервера",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/files/many": {
       "post": {
+        "tags": [
+          "Files"
+        ],
         "summary": "Загрузить несколько файлов",
-        "description": "Загрузка нескольких файлов в MinIO. Ожидается form-data с параметром \"files\", содержащим   массив файлов.  Для доступа нужно передать access токен(который на фронтенде должен храниться в local storage). access токен нужно передавать в HTTP-заголовке Authorization, в следующем виде, пример ``` Authorization Bearer <твой_access_token> ``` ",
+        "description": "Загрузка нескольких файлов в MinIO. Ожидается form-data с параметром \"files\", содержащим массив файлов. Для доступа требуется access токен (в заголовке Authorization).\n",
         "requestBody": {
           "required": true,
           "content": {
@@ -390,7 +387,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/SuccessResponse"
+                  "$ref": "#/components/schemas/SuccessResponseMany"
                 }
               }
             }
@@ -418,17 +415,19 @@
         }
       },
       "get": {
+        "tags": [
+          "Files"
+        ],
         "summary": "Получить несколько файлов",
-        "description": "Получение URL нескольких файлов через query-параметры. Для доступа нужно передать access токен(который на фронтенде должен храниться в local storage). access токен нужно передавать в HTTP-заголовке Authorization, в следующем виде, пример  ``` Authorization Bearer <твой_access_token> ``` ",
+        "description": "Получение URL для нескольких файлов. Передаётся параметр `object_ids` как строка (JSON-массив объектов). Для доступа требуется access токен (в заголовке Authorization).\n",
         "parameters": [
           {
             "name": "object_ids",
             "in": "query",
-            "description": "Массив идентификаторов файлов в формате JSON пример json body",
+            "description": "Массив идентификаторов файлов в формате JSON. Пример: `[{\"obj_id\":\"67/703c96f6-6818-4ad9-85a1-3325e2795b19\",\"file_category\":\"video\"}, {\"obj_id\":\"67/6d5d3a3e-55c3-4881-b359-1379e7105a6c\",\"file_category\":\"photo\"}]`\n",
             "required": true,
             "schema": {
-              "type": "string",
-              "example": "[{\"obj_id\":\"67/703c96f6-6818-4ad9-85a1-3325e2795b19\",\"file_category\":\"video\"},{\"obj_id\":\"67/6d5d3a3e-55c3-4881-b359-1379e7105a6c\",\"file_category\":\"photo\"}]"
+              "type": "string"
             }
           }
         ],
@@ -438,7 +437,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/SuccessResponse"
+                  "$ref": "#/components/schemas/SuccessResponseMany"
                 }
               }
             }
@@ -464,7 +463,7 @@
             }
           },
           "404": {
-            "description": "Файл(ы) не найдены",
+            "description": "Файлы не найдены",
             "content": {
               "application/json": {
                 "schema": {
@@ -486,17 +485,20 @@
         }
       },
       "delete": {
+        "tags": [
+          "Files"
+        ],
         "summary": "Удалить несколько файлов",
-        "description": "Удаление нескольких файлов в MinIO через query-параметры. Для доступа нужно передать access токен(который на фронтенде должен храниться в local storage). access токен нужно передавать в HTTP-заголовке Authorization, в следующем виде, пример  ``` Authorization Bearer <твой_access_token> ``` ",
+        "description": "Удаление нескольких файлов в MinIO. Передаётся параметр `object_ids` как строка (JSON-массив объектов). Для доступа требуется access токен (в заголовке Authorization).\n",
         "parameters": [
           {
             "name": "object_ids",
             "in": "query",
-            "description": "Массив идентификаторов файлов в формате JSON",
+            "description": "Массив идентификаторов файлов в формате JSON.",
             "required": true,
             "schema": {
               "type": "string",
-              "example": "[{\"obj_id\":\"4/7a3314c2-17d2-4d40-939d-c55a7fcc56c7\",\"file_category\":\"photo\"},{\"obj_id\":\"4/082c0b1f-5f19-4d76-8297-535f369c0c48\",\"file_category\":\"photo\"}]"
+              "example": "[{\"obj_id\":\"4/7a3314c2-17d2-4d40-939d-c55a7fcc56c7\",\"file_category\":\"photo\"}, {\"obj_id\":\"4/082c0b1f-5f19-4d76-8297-535f369c0c48\",\"file_category\":\"photo\"}]"
             }
           }
         ],
@@ -506,7 +508,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/SuccessResponse"
+                  "$ref": "#/components/schemas/SuccessResponseSimple"
                 }
               }
             }
@@ -532,7 +534,7 @@
             }
           },
           "404": {
-            "description": "Файл(ы) не найдены",
+            "description": "Файлы не найдены",
             "content": {
               "application/json": {
                 "schema": {
@@ -557,7 +559,7 @@
   },
   "components": {
     "schemas": {
-      "SuccessResponse": {
+      "SuccessResponseOne": {
         "type": "object",
         "properties": {
           "status": {
@@ -566,25 +568,46 @@
           },
           "message": {
             "type": "string",
-            "example": "File uploaded successfully"
+            "example": "File received successfully"
+          },
+          "file_data": {
+            "$ref": "#/components/schemas/FileResponse"
+          }
+        }
+      },
+      "SuccessResponseMany": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "integer",
+            "example": 200
+          },
+          "message": {
+            "type": "string",
+            "example": "Files received successfully"
+          },
+          "file_data": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/FileResponse"
+            }
+          }
+        }
+      },
+      "SuccessResponseSimple": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "integer",
+            "example": 200
+          },
+          "message": {
+            "type": "string",
+            "example": "Operation completed successfully"
           },
           "data": {
-            "oneOf": [
-              {
-                "type": "string",
-                "example": "http://minio-server/path/to/file.jpg"
-              },
-              {
-                "type": "array",
-                "items": {
-                  "type": "string"
-                },
-                "example": [
-                  "http://minio-server/path/to/file1.jpg",
-                  "http://minio-server/path/to/file2.jpg"
-                ]
-              }
-            ]
+            "type": "string",
+            "example": "OK"
           }
         }
       },
@@ -602,6 +625,29 @@
           "details": {
             "type": "string",
             "example": "Detailed error message"
+          }
+        }
+      },
+      "FileResponse": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "example": "5k_photo.jpg"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "example": "2025-04-10T10:20:23.891169366Z"
+          },
+          "obj_id": {
+            "type": "string",
+            "example": "7/e57bb3b2-7a5e-4d83-8681-facadfcaecd5.jpg"
+          },
+          "url": {
+            "type": "string",
+            "format": "uri",
+            "example": "http://minio-server/photo/7/e57bb3b2-7a5e-4d83-8681-facadfcaecd5.jpg?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=minioadmin%2F20250410%2Fus-east-1%2Fs3%2Faws4_request&X-Amz-Date=20250410T102023Z&X-Amz-Expires=28800&X-Amz-SignedHeaders=host&X-Amz-Signature=c8e3c84c34e1b3a69300132ad91761a1a8602e9294e46830031eccb9464dc9fc"
           }
         }
       },
