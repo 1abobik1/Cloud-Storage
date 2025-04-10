@@ -1,5 +1,5 @@
 'use client'
-import Link from "next/link";
+
 import { useContext, useState, useEffect } from "react";
 import UserService from "@/app/api/services/UserServices";
 import { Context } from "@/app/_app";
@@ -10,8 +10,8 @@ import { useRouter } from 'next/navigation';
 
 function Home() {
   const { store } = useContext(Context);
-  const router = useRouter(); // ✅ выносим вверх, чтобы вызывался всегда
-  const [users, setUsers] = useState<IUser[]>([]);
+  const router = useRouter(); 
+
 
   useEffect(() => {
     if (localStorage.getItem('token')) {
@@ -25,14 +25,7 @@ function Home() {
     }
   }, [store.isAuth]);
 
-  async function getUsers() {
-    try {
-      const response = await UserService.fetchUsers();
-      setUsers(response.data);
-    } catch (e) {
-      console.log(e);
-    }
-  }
+ 
 
   if (store.isLoading) {
     return <div>Загрузка...</div>
@@ -42,7 +35,7 @@ function Home() {
     return (
       <div>
         <LoginForm />
-        <button onClick={getUsers}>Получить пользователей</button>
+       
       </div>
     );
   }
