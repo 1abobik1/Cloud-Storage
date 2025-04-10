@@ -1,9 +1,12 @@
 import React from 'react';
-import PhotoPack from '@/app/components/PhotoPack'
+import PhotoPack from '@/app/components/TypeBlock'
+
 const page = () => {
+
+
   return (
     <div>
-      <PhotoPack/>
+      
     </div>
   );
 };

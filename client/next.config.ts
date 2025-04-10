@@ -12,7 +12,7 @@ const nextConfig: NextConfig = {
         destination: 'http://localhost:8080/:path*',
       },
       {
-        source: '/api/:path*',
+        source: '/cloudapi/:path*',
         destination: 'http://localhost:8081/:path*',
       },
     ];
