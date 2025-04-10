@@ -3,6 +3,7 @@ package minio
 import (
 	"bytes"
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"log"
@@ -10,10 +11,11 @@ import (
 	"strconv"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/1abobik1/Cloud-Storage/file_upload_service/config"
+	"github.com/1abobik1/Cloud-Storage/file_upload_service/internal/domain"
 	"github.com/1abobik1/Cloud-Storage/file_upload_service/internal/dto"
-	"github.com/1abobik1/Cloud-Storage/file_upload_service/internal/helpers"
 	"github.com/google/uuid"
 	"github.com/minio/minio-go/v7"
 	"github.com/minio/minio-go/v7/pkg/credentials"
@@ -27,14 +29,14 @@ var (
 
 // Client интерфейс для взаимодействия с Minio
 type Client interface {
-	InitMinio(minioPort, minioRootUser, minioRootPassword string, minioUseSSL bool) error           // Метод для инициализации подключения к Minio
-	CreateOne(ctx context.Context, file helpers.FileData, userID int) (string, error)               // Метод для создания одного объекта в бакете Minio
-	CreateMany(ctx context.Context, data map[string]helpers.FileData, userID int) ([]string, error) // Метод для создания нескольких объектов в бакете Minio
-	GetOne(ctx context.Context, objectID dto.ObjectID, userID int) (string, error)                  // Метод для получения одного объекта из бакета Minio
-	GetMany(ctx context.Context, objectIDs []dto.ObjectID, userID int) ([]string, []error)          // Метод для получения нескольких объектов из бакета Minio
-	GetAll(ctx context.Context, t string, userID int) ([][]string, []error)                           // Метод для получения всех объектов из конкретного бакета Minio для конкретного пользователя
-	DeleteOne(ctx context.Context, objectID dto.ObjectID, userID int) error                         // Метод для удаления одного объекта из бакета Minio
-	DeleteMany(ctx context.Context, objectIDs []dto.ObjectID, userID int) []error                   // Метод для удаления нескольких объектов из бакета Minio
+	InitMinio(minioPort, minioRootUser, minioRootPassword string, minioUseSSL bool) error                       // Метод для инициализации подключения к Minio
+	CreateOne(ctx context.Context, file domain.FileContent, userID int) (dto.FileResponse, error)               // Метод для создания одного объекта в бакете Minio
+	CreateMany(ctx context.Context, data map[string]domain.FileContent, userID int) ([]dto.FileResponse, error) // Метод для создания нескольких объектов в бакете Minio
+	GetOne(ctx context.Context, objectID dto.ObjectID, userID int) (dto.FileResponse, error)                    // Метод для получения одного объекта из бакета Minio
+	GetMany(ctx context.Context, objectIDs []dto.ObjectID, userID int) ([]dto.FileResponse, []error)            // Метод для получения нескольких объектов из бакета Minio
+	GetAll(ctx context.Context, t string, userID int) ([]dto.FileResponse, []error)                             // Метод для получения всех объектов из конкретного бакета Minio для конкретного пользователя
+	DeleteOne(ctx context.Context, objectID dto.ObjectID, userID int) error                                     // Метод для удаления одного объекта из бакета Minio
+	DeleteMany(ctx context.Context, objectIDs []dto.ObjectID, userID int) []error                               // Метод для удаления нескольких объектов из бакета Minio
 }
 
 type minioClient struct {
@@ -84,15 +86,15 @@ func (m *minioClient) InitMinio(minioPort, minioRootUser, minioRootPassword stri
 // Метод принимает структуру FileData, которая содержит имя файла и его данные.
 // В случае успешной загрузки данных в бакет, метод возвращает nil, иначе возвращает ошибку.
 // Все операции выполняются в контексте задачи.
-func (m *minioClient) CreateOne(ctx context.Context, file helpers.FileData, userID int) (string, error) {
+func (m *minioClient) CreateOne(ctx context.Context, file domain.FileContent, userID int) (dto.FileResponse, error) {
 	const op = "location internal.minio.minio.CreateOne"
 
 	// получение расширения файла
 	ext := getFileExtension(file.Name)
 	// генерация file_id
-	ObjID := generateFileID(userID, ext)
+	objID := generateFileID(userID, ext)
 	// создание метаданных для удобного хранения в minio
-	metadata := generateUserMetaData(userID)
+	metadata := generateUserMetaData(userID, file.Name, file.CreatedAt)
 
 	fileCategory := GetCategory(file.Format)
 
@@ -104,35 +106,46 @@ func (m *minioClient) CreateOne(ctx context.Context, file helpers.FileData, user
 	log.Printf("METADATA: %v", options.UserMetadata)
 
 	// загрузка в объектное хранилище minio
-	_, err := m.mc.PutObject(ctx, fileCategory, ObjID, bytes.NewReader(file.Data), int64(len(file.Data)), options)
+	_, err := m.mc.PutObject(ctx, fileCategory, objID, bytes.NewReader(file.Data), int64(len(file.Data)), options)
 	if err != nil {
-		return "", fmt.Errorf("error when creating an object %s: %v", file.Name, err)
+		return dto.FileResponse{}, fmt.Errorf("error when creating an object %s: %v", file.Name, err)
 	}
 
 	// Получение URL для загруженного объекта
-	url, err := m.mc.PresignedGetObject(ctx, fileCategory, ObjID, m.cfg.MinIoURLLifeTime, nil)
+	url, err := m.mc.PresignedGetObject(ctx, fileCategory, objID, m.cfg.MinIoURLLifeTime, nil)
 	if err != nil {
-		return "", fmt.Errorf("error when creating the URL for the object %s: %v", file.Name, err)
+		return dto.FileResponse{}, fmt.Errorf("error when creating the URL for the object %s: %v", file.Name, err)
 	}
 
+	fileResp := dto.FileResponse{
+		Name:       file.Name,
+		Created_At: file.CreatedAt.String(),
+		ObjID:      objID,
+		Url:        url.String(),
+	}
+	// в redis храним только json (не поддерживает структуры)
+	fileRespJson, err := json.Marshal(fileResp)
+	if err != nil {
+		return dto.FileResponse{}, fmt.Errorf("error marshaling FileResponse: %w", err)
+	}
 	// save in redis
-	cacheKey := getRedisKey(ObjID, fileCategory)
-	err = m.redisClient.Set(ctx, cacheKey, url.String(), m.cfg.RedisURLLifeTime).Err()
+	cacheKey := getRedisKey(objID, fileCategory)
+	err = m.redisClient.Set(ctx, cacheKey, fileRespJson, m.cfg.RedisURLLifeTime).Err()
 	if err != nil {
 		log.Printf("Failed to save redis, file URL: %v, %s", err, op)
 	}
 
-	return url.String(), nil
+	return fileResp, nil
 }
 
 // CreateMany создает несколько объектов в хранилище MinIO из переданных данных.
 // Если происходит ошибка при создании объекта, метод возвращает ошибку,
 // указывающую на неудачные объекты.
-func (m *minioClient) CreateMany(ctx context.Context, data map[string]helpers.FileData, userID int) ([]string, error) {
+func (m *minioClient) CreateMany(ctx context.Context, data map[string]domain.FileContent, userID int) ([]dto.FileResponse, error) {
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel() // Гарантирует освобождение контекста
 
-	urlCh := make(chan string, len(data))
+	resCh := make(chan dto.FileResponse, len(data))
 	errCh := make(chan error, len(data))
 	var wg sync.WaitGroup
 	var mu sync.Mutex
@@ -140,10 +153,10 @@ func (m *minioClient) CreateMany(ctx context.Context, data map[string]helpers.Fi
 
 	for objectID, file := range data {
 		wg.Add(1)
-		go func(objectID string, file helpers.FileData) {
+		go func(objectID string, file domain.FileContent) {
 			defer wg.Done()
 
-			url, err := m.CreateOne(ctx, file, userID)
+			fileResponse, err := m.CreateOne(ctx, file, userID)
 			if err != nil {
 				mu.Lock()
 				if firstErr == nil { // Запоминаем только первую ошибку
@@ -159,7 +172,7 @@ func (m *minioClient) CreateMany(ctx context.Context, data map[string]helpers.Fi
 			select {
 			case <-ctx.Done():
 				return
-			case urlCh <- url:
+			case resCh <- fileResponse:
 			}
 		}(objectID, file)
 	}
@@ -167,14 +180,14 @@ func (m *minioClient) CreateMany(ctx context.Context, data map[string]helpers.Fi
 	// Ожидаем завершения всех горутин и закрываем каналы
 	go func() {
 		wg.Wait()
-		close(urlCh)
+		close(resCh)
 		close(errCh)
 	}()
 
 	// Собираем результаты
-	var urls []string
-	for url := range urlCh {
-		urls = append(urls, url)
+	var urls []dto.FileResponse
+	for fileResponse := range resCh {
+		urls = append(urls, fileResponse)
 	}
 
 	// Если есть ошибка — возвращаем её
@@ -187,61 +200,78 @@ func (m *minioClient) CreateMany(ctx context.Context, data map[string]helpers.Fi
 
 // GetOne получает один объект из бакета Minio по его идентификатору.
 // Он принимает строку `objectID` в качестве параметра и возвращает срез байт данных объекта и ошибку, если такая возникает.
-func (m *minioClient) GetOne(ctx context.Context, objectID dto.ObjectID, userID int) (string, error) {
+func (m *minioClient) GetOne(ctx context.Context, objectID dto.ObjectID, userID int) (dto.FileResponse, error) {
 	const op = "location internal.minio.GetOne"
+
+	var fileResp dto.FileResponse
 
 	// search url in Redis
 	cacheKey := getRedisKey(objectID.ObjID, objectID.FileCategory)
-	redisURL, err := m.redisClient.Get(ctx, cacheKey).Result()
+	fileRespJsonInRedis, err := m.redisClient.Get(ctx, cacheKey).Result()
 	if err == nil {
-		log.Printf("The data is taken from the redis cache, %s", op)
-		return redisURL, nil
+		log.Printf("The data is taken from the redis cache, %s.... cacheKey: %v", op, cacheKey)
+		// в redis храниться json, нужно десерелизовать в структуру
+		if err := json.Unmarshal([]byte(fileRespJsonInRedis), &fileResp); err != nil {
+			return dto.FileResponse{}, fmt.Errorf("error unmarshaling FileResponse: %w", err)
+		}
+		return fileResp, nil
 	} else if err != redis.Nil {
-		return "", err
+		return dto.FileResponse{}, err
 	}
 
 	// get Metadata in minio
 	objInfo, err := m.mc.StatObject(ctx, objectID.FileCategory, objectID.ObjID, minio.StatObjectOptions{})
 	if err != nil {
 		log.Printf("Error: %v, %s \n", err, op)
-		return "", fmt.Errorf("error getting information about the object %s: %w", objectID.ObjID, ErrFileNotFound)
+		return dto.FileResponse{}, fmt.Errorf("error getting information about the object %s: %w", objectID.ObjID, ErrFileNotFound)
 	}
 
 	userIdStr, ok := objInfo.UserMetadata["User_id"]
 	if !ok {
 		log.Printf("Error: %v, %s \n", err, op)
-		return "", fmt.Errorf("the user_id metadata was not found for the object %s: %w", objectID.ObjID, ErrFileNotFound)
+		return dto.FileResponse{}, fmt.Errorf("the user_id metadata was not found for the object %s: %w", objectID.ObjID, ErrFileNotFound)
 	}
 
 	userIdInt, err := strconv.Atoi(userIdStr)
 	if err != nil {
-		return "", fmt.Errorf("error converting string number: %s to int", userIdStr)
+		return dto.FileResponse{}, fmt.Errorf("error converting string number: %s to int", userIdStr)
 	}
 
 	if userIdInt != userID {
-		return "", fmt.Errorf("you don't have access rights to other people's files: %w", ErrForbiddenResource)
+		return dto.FileResponse{}, fmt.Errorf("you don't have access rights to other people's files: %w", ErrForbiddenResource)
 	}
 
 	// generate url in minio if not in redis
 	minioURL, err := m.mc.PresignedGetObject(ctx, objectID.FileCategory, objectID.ObjID, m.cfg.MinIoURLLifeTime, nil)
 	if err != nil {
 		log.Printf("Error: %v, %s", err, op)
-		return "", OperationError{ObjectID: objectID.ObjID, Err: fmt.Errorf("error when getting the URL for the object %s: %w", objectID.ObjID, ErrFileNotFound)}
+		return dto.FileResponse{}, OperationError{ObjectID: objectID.ObjID, Err: fmt.Errorf("error when getting the URL for the object %s: %w", objectID.ObjID, ErrFileNotFound)}
 	}
 
+	fileResp.Name = objInfo.UserMetadata["File_name"]
+	fileResp.Created_At = objInfo.UserMetadata["Created_At"]
+	fileResp.ObjID = objectID.ObjID
+	fileResp.Url = minioURL.String()
+
+	// преобразуем структуру в json для удобного хранения в redis
+	fileRespJson, errJson := json.Marshal(fileResp)
+	if errJson != nil {
+		return dto.FileResponse{}, fmt.Errorf("error marshaling FileResponse: %w", err)
+	}
 	// save in redis
-	err = m.redisClient.Set(ctx, cacheKey, minioURL.String(), m.cfg.RedisURLLifeTime).Err()
+	err = m.redisClient.Set(ctx, cacheKey, fileRespJson, m.cfg.RedisURLLifeTime).Err()
 	if err != nil {
 		log.Printf("Failed to save redis, file URL: %v, %s", err, op)
 	}
 
-	return minioURL.String(), nil
+	return fileResp, nil
 }
 
 // GetAll получает все объекты из указанного бакета (t соответствует типу файла, например, "photo")
 // для заданного пользователя. Он использует префикс "<userID>/" для фильтрации объектов.
 // Для каждого найденного объекта генерируется предварительно подписанный URL, который кешируется в Redis.
-func (m *minioClient) GetAll(ctx context.Context, t string, userID int) ([][]string, []error) {
+func (m *minioClient) GetAll(ctx context.Context, t string, userID int) ([]dto.FileResponse, []error) {
+	const op = "location internal.minio.GetAll"
 
 	prefix := fmt.Sprintf("%d/", userID)
 
@@ -252,8 +282,8 @@ func (m *minioClient) GetAll(ctx context.Context, t string, userID int) ([][]str
 	})
 
 	var (
-		urls [][]string
-		errs []error
+		fileResponses []dto.FileResponse
+		errs          []error
 	)
 
 	// Для каждого объекта получаем предварительно подписанный URL и добавляем его в список.
@@ -266,13 +296,23 @@ func (m *minioClient) GetAll(ctx context.Context, t string, userID int) ([][]str
 
 		// Для каждого объекта пытаемся получить URL из Redis, если его нет — генерируем заново.
 		cacheKey := getRedisKey(object.Key, t)
-		cachedURL, err := m.redisClient.Get(ctx, cacheKey).Result()
-		var urlStr []string
+		fileRespJsonRedis, err := m.redisClient.Get(ctx, cacheKey).Result()
+		var fileResp dto.FileResponse
 		if err == nil {
-			log.Printf("Cache hit for object %s", object.Key)
-			urlStr = append(urlStr, object.Key)
-			urlStr = append(urlStr, cachedURL)
+			log.Printf("The data is taken from the redis cache, %s.... cacheKey: %v", op, cacheKey)
+			if err := json.Unmarshal([]byte(fileRespJsonRedis), &fileResp); err != nil {
+				errs = append(errs, err)
+			}
+			fileResponses = append(fileResponses, fileResp)
 		} else {
+
+			// поиск метаданных в minio
+			objInfo, err := m.mc.StatObject(ctx, t, object.Key, minio.StatObjectOptions{})
+			if err != nil {
+				log.Printf("Error: %v, %s \n", err, op)
+				errs = append(errs, err)
+			}
+
 			// Если в кеше не найдено, генерируем URL через MinIO
 			presignedURL, err := m.mc.PresignedGetObject(ctx, t, object.Key, m.cfg.MinIoURLLifeTime, nil)
 			if err != nil {
@@ -280,23 +320,32 @@ func (m *minioClient) GetAll(ctx context.Context, t string, userID int) ([][]str
 				errs = append(errs, err)
 				continue
 			}
-			urlStr = append(urlStr, object.Key)
-			urlStr = append(urlStr, presignedURL.String())
-			// Записываем URL в Redis с заданным TTL
-			err = m.redisClient.Set(ctx, cacheKey, urlStr, m.cfg.RedisURLLifeTime).Err()
+			fileResp.Name = objInfo.UserMetadata["File_name"]
+			fileResp.Created_At = objInfo.UserMetadata["Created_At"]
+			fileResp.ObjID = object.Key
+			fileResp.Url = presignedURL.String()
+
+			// преобразуем структуру в json
+			fileRespJson, err := json.Marshal(fileResp)
+			if err != nil {
+				errs = append(errs, err)
+			}
+			// Записываем json структуру dto.FileResponse в Redis с заданным TTL
+			err = m.redisClient.Set(ctx, cacheKey, fileRespJson, m.cfg.RedisURLLifeTime).Err()
 			if err != nil {
 				log.Printf("Failed to cache URL for object %s: %v", object.Key, err)
+				errs = append(errs, err)
 			}
+			fileResponses = append(fileResponses, fileResp)
 		}
-		urls = append(urls, urlStr)
 	}
 
-	return urls, errs
+	return fileResponses, errs
 }
 
-func (m *minioClient) GetMany(ctx context.Context, objectIDs []dto.ObjectID, userID int) ([]string, []error) {
-	urlCh := make(chan string, len(objectIDs))         // Канал для URL-адресов объектов
-	errCh := make(chan OperationError, len(objectIDs)) // Канал для ошибок
+func (m *minioClient) GetMany(ctx context.Context, objectIDs []dto.ObjectID, userID int) ([]dto.FileResponse, []error) {
+	resCh := make(chan dto.FileResponse, len(objectIDs)) // Канал для URL-адресов объектов
+	errCh := make(chan OperationError, len(objectIDs))   // Канал для ошибок
 
 	var wg sync.WaitGroup
 	ctx, cancel := context.WithCancel(ctx)
@@ -333,7 +382,7 @@ func (m *minioClient) GetMany(ctx context.Context, objectIDs []dto.ObjectID, use
 			select {
 			case <-ctx.Done():
 				return
-			case urlCh <- url:
+			case resCh <- url:
 			}
 		}(objectID)
 	}
@@ -341,16 +390,16 @@ func (m *minioClient) GetMany(ctx context.Context, objectIDs []dto.ObjectID, use
 	// Закрытие каналов после завершения всех горутин.
 	go func() {
 		wg.Wait()
-		close(urlCh)
+		close(resCh)
 		close(errCh)
 	}()
 
 	// Сбор URL-адресов объектов и ошибок.
-	var urls []string
+	var urls []dto.FileResponse
 	var errs []error
 
-	for url := range urlCh {
-		urls = append(urls, url)
+	for fileResp := range resCh {
+		urls = append(urls, fileResp)
 	}
 	for opErr := range errCh {
 		errs = append(errs, opErr.Err)
@@ -461,7 +510,7 @@ func getRedisKey(ObjID, fileType string) string {
 }
 
 func getFileExtension(fileName string) string {
-	ext := filepath.Ext(fileName) 
+	ext := filepath.Ext(fileName)
 	return strings.TrimPrefix(ext, ".")
 }
 
@@ -470,9 +519,11 @@ func generateFileID(userID int, fileExt string) string {
 	return fmt.Sprintf("%d/%s.%s", userID, uuid.New().String(), fileExt)
 }
 
-func generateUserMetaData(userID int) map[string]string {
+func generateUserMetaData(userID int, fileName string, createdAt time.Time) map[string]string {
 	return map[string]string{
-		"User_id": fmt.Sprintf("%d", userID),
+		"User_id":    fmt.Sprintf("%d", userID),
+		"File_name":  fileName,
+		"Created_At": createdAt.String(),
 	}
 }
 

@@ -5,11 +5,11 @@ import (
 	"fmt"
 	"io"
 	"log"
+	"time"
 
+	"github.com/1abobik1/Cloud-Storage/file_upload_service/internal/domain"
 	"github.com/1abobik1/Cloud-Storage/file_upload_service/internal/dto"
 	erresponse "github.com/1abobik1/Cloud-Storage/file_upload_service/internal/handler/errors_response"
-	"github.com/1abobik1/Cloud-Storage/file_upload_service/internal/handler/responses"
-	"github.com/1abobik1/Cloud-Storage/file_upload_service/internal/helpers"
 	"github.com/1abobik1/Cloud-Storage/file_upload_service/internal/minio"
 	"github.com/1abobik1/Cloud-Storage/file_upload_service/pkg"
 	"github.com/gin-gonic/gin"
@@ -66,16 +66,18 @@ func (h *Handler) CreateOne(c *gin.Context) {
 
 	fileFormat := http.DetectContentType(fileBytes)
 
+	now := time.Now().UTC()
 	// Создаем структуру FileData для хранения данных файла
-	fileData := helpers.FileData{
-		Name:   file.Filename,
-		Format: fileFormat,
-		Data:   fileBytes,
+	fileData := domain.FileContent{
+		Name:      file.Filename,
+		Format:    fileFormat,
+		CreatedAt: now,
+		Data:      fileBytes,
 	}
 
-	log.Printf("USER-ID:%d FILE DATA... fileFormat:%s, fileName: %s", userID, fileFormat, file.Filename)
+	log.Printf("USER-ID:%d FILE DATA... fileFormat:%s, fileName: %s, CreatedAt: %v", userID, fileFormat, file.Filename, now)
 
-	link, err := h.minioService.CreateOne(c, fileData, userID)
+	fileResp, err := h.minioService.CreateOne(c, fileData, userID)
 	if err != nil {
 		log.Printf("Error: %v,  %s", err, op)
 		c.JSON(http.StatusInternalServerError, erresponse.ErrorResponse{
@@ -86,10 +88,10 @@ func (h *Handler) CreateOne(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, responses.SuccessResponse{
-		Status:  http.StatusOK,
-		Message: "File uploaded successfully",
-		Data:    link, // URL-адрес загруженного файла
+	c.JSON(http.StatusOK, gin.H{
+		"status":  http.StatusOK,
+		"message": "File uploaded successfully",
+		"file_data":    fileResp,
 	})
 }
 
@@ -129,7 +131,7 @@ func (h *Handler) CreateMany(c *gin.Context) {
 	}
 
 	// Создаем map для хранения данных файлов
-	data := make(map[string]helpers.FileData)
+	data := make(map[string]domain.FileContent)
 
 	// Проходим по каждому файлу в форме
 	for _, file := range files {
@@ -160,17 +162,19 @@ func (h *Handler) CreateMany(c *gin.Context) {
 		fileFormat := http.DetectContentType(fileBytes)
 
 		// Добавляем данные файла в map
-		data[file.Filename] = helpers.FileData{
-			Name:   file.Filename,
-			Format: fileFormat,
-			Data:   fileBytes,
+		now := time.Now().UTC()
+		data[file.Filename] = domain.FileContent{
+			Name:      file.Filename,
+			Format:    fileFormat,
+			CreatedAt: now,
+			Data:      fileBytes,
 		}
 
-		log.Printf("USER-ID:%d FILE DATA... fileFormat:%s, fileName: %s", userID, fileFormat, file.Filename)
+		log.Printf("USER-ID:%d FILE DATA... fileFormat:%s, fileName: %s, CreatedAt: %v", userID, fileFormat, file.Filename, now)
 	}
 
 	// Сохраняем файлы в MinIO с помощью метода CreateMany
-	links, err := h.minioService.CreateMany(c, data, userID)
+	fileRespes, err := h.minioService.CreateMany(c, data, userID)
 	if err != nil {
 		log.Printf("Error: %v,  %s", err, op)
 		c.JSON(http.StatusInternalServerError, erresponse.ErrorResponse{
@@ -181,10 +185,10 @@ func (h *Handler) CreateMany(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, responses.SuccessResponse{
-		Status:  http.StatusOK,
-		Message: "Files uploaded successfully",
-		Data:    links, // URL-адреса загруженных файлов
+	c.JSON(http.StatusOK, gin.H{
+		"status":  http.StatusOK,
+		"message": "Files uploaded successfully",
+		"file_data":    fileRespes,
 	})
 }
 
@@ -207,7 +211,7 @@ func (h *Handler) GetOne(c *gin.Context) {
 	log.Printf("objectID... ID:%s, userID:%d, FileCategory:%s", objectID.ObjID, userID, objectID.FileCategory)
 
 	// Используем сервис MinIO для получения ссылки на объект
-	link, err := h.minioService.GetOne(c, objectID, userID)
+	fileResp, err := h.minioService.GetOne(c, objectID, userID)
 	if err != nil {
 		log.Printf("Error: %v,  %s", err, op)
 
@@ -237,10 +241,10 @@ func (h *Handler) GetOne(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, responses.SuccessResponse{
-		Status:  http.StatusOK,
-		Message: "File received successfully",
-		Data:    link, // URL-адрес полученного файла
+	c.JSON(http.StatusOK, gin.H{
+		"status":  http.StatusOK,
+		"message": "File received successfully",
+		"file_data":    fileResp,
 	})
 }
 
@@ -255,7 +259,7 @@ func (h *Handler) GetMany(c *gin.Context) {
 		return
 	}
 
-	var objectIDs dto.ObjectIDsDto
+	var objectIDs dto.ObjectIDs
 
 	// Привязка JSON данных из запроса к переменной objectIDs
 	if err := c.ShouldBindJSON(&objectIDs); err != nil {
@@ -271,7 +275,7 @@ func (h *Handler) GetMany(c *gin.Context) {
 	log.Printf("ObjectIDsDto: %v \n", objectIDs)
 
 	// Используем сервис MinIO для получения ссылок на объекты по их идентификаторам
-	links, errs := h.minioService.GetMany(c, objectIDs.ObjectIDs, userID)
+	fileResp, errs := h.minioService.GetMany(c, objectIDs.ObjectIDs, userID)
 	for _, err := range errs {
 		if err != nil {
 			log.Printf("Error: %v,  %s", err, op)
@@ -307,7 +311,7 @@ func (h *Handler) GetMany(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{
 		"status":  http.StatusOK,
 		"message": "Files received successfully",
-		"data":    links, // URL-адреса полученных файлов
+		"file_data":    fileResp,
 	})
 }
 
@@ -328,10 +332,10 @@ func (h *Handler) GetAll(c *gin.Context) {
 		log.Print("Error: the passed type in the query parameter. It can only be one of these types {photo, unknown, video, text}")
 		c.JSON(http.StatusBadRequest, gin.H{"error": "the passed type in the query parameter. It can only be one of these types {photo, unknown, video, text}"})
 		return
-	} 
+	}
 
 	// Используем сервис MinIO для получения ссылок на объекты по их идентификаторам
-	links, errs := h.minioService.GetAll(c, t, userID)
+	fileResp, errs := h.minioService.GetAll(c, t, userID)
 	for _, err := range errs {
 		if err != nil {
 			log.Printf("Error: %v,  %s", err, op)
@@ -366,8 +370,8 @@ func (h *Handler) GetAll(c *gin.Context) {
 	// Возвращаем успешный ответ с URL-адресами полученных файлов
 	c.JSON(http.StatusOK, gin.H{
 		"status":  http.StatusOK,
-		"message": "Files received successfully",
-		"data":    links, // URL-адресов и id_file полученных файлов
+		"message": "All Files received successfully",
+		"file_data":    fileResp,
 	})
 }
 
@@ -418,9 +422,9 @@ func (h *Handler) DeleteOne(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, responses.SuccessResponse{
-		Status:  http.StatusOK,
-		Message: "File deleted successfully",
+	c.JSON(http.StatusOK, gin.H{
+		"status":  http.StatusOK,
+		"message": "File deleted successfully",
 	})
 }
 
@@ -435,7 +439,7 @@ func (h *Handler) DeleteMany(c *gin.Context) {
 		return
 	}
 
-	var objectIDs dto.ObjectIDsDto
+	var objectIDs dto.ObjectIDs
 	if err := c.ShouldBindJSON(&objectIDs); err != nil {
 		log.Printf("Error: %v,  %s", err, op)
 		c.JSON(http.StatusBadRequest, erresponse.ErrorResponse{
@@ -480,8 +484,8 @@ func (h *Handler) DeleteMany(c *gin.Context) {
 		}
 	}
 
-	c.JSON(http.StatusOK, responses.SuccessResponse{
-		Status:  http.StatusOK,
-		Message: "Files deleted successfully",
+	c.JSON(http.StatusOK, gin.H{
+		"status":  http.StatusOK,
+		"message": "Files deleted successfully",
 	})
 }
