@@ -367,7 +367,7 @@ func (h *Handler) GetAll(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{
 		"status":  http.StatusOK,
 		"message": "Files received successfully",
-		"data":    links, // URL-адреса полученных файлов
+		"data":    links, // URL-адресов и id_file полученных файлов
 	})
 }
 
