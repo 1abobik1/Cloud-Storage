@@ -4,41 +4,36 @@ import {Context} from "@/app/_app";
 import LoginForm from "./api/components/LoginForm";
 import {observer} from "mobx-react-lite";
 import {useRouter} from 'next/navigation';
+import {AppRouterInstance} from "next/dist/shared/lib/app-router-context.shared-runtime";
 
 function Home() {
-  const { store } = useContext(Context);
-  const router = useRouter(); // ✅ выносим вверх, чтобы вызывался всегда
+    const {store} = useContext(Context);
+    const router: AppRouterInstance = useRouter();
 
-  useEffect(() => {
-    if (localStorage.getItem('token')) {
-      store.checkAuth();
+    useEffect(() => {
+        if (localStorage.getItem('token')) {
+            store.checkAuth();
+        }
+    }, []);
+
+    useEffect(() => {
+        if (store.isAuth) {
+            router.push('/cloud/home'); // переход после авторизации
+        }
+    }, [store.isAuth]);
+
+
+    if (store.isLoading) {
+        return <div>Загрузка...</div>
     }
-  }, []);
-
-  useEffect(() => {
-    if (store.isAuth) {
-      router.push('/cloud/home'); // переход после авторизации
-    }
-  }, [store.isAuth]);
 
 
-  if (store.isLoading) {
-    return <div>Загрузка...</div>
-  }
-
-  if (!store.isAuth) {
     return (
-      <div>
-        <LoginForm />
-      </div>
+        <div>
+            <LoginForm/>
+        </div>
     );
-  }
 
-  return (
-    <div>
-      <button onClick={() => store.logout()}>Выйти</button>
-    </div>
-  );
 }
 
 export default observer(Home);

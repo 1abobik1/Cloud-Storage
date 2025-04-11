@@ -1,35 +1,47 @@
-import axios from 'axios';
+import axios, {AxiosInstance, AxiosResponse, InternalAxiosRequestConfig} from 'axios';
 import {AuthResponse} from "@/app/api/models/response/AuthResponse";
+import {AUTH_API_URL, CLOUDAPI_URL} from "./urls";
 
+export const createApiInstance = (
+    baseURL: string,
 
-export const API_URL = '/api'
-export const CLOUDAPI_URL = '/cloudapi'
+): AxiosInstance => {
+    const api = axios.create({
+        withCredentials: true,
+        baseURL: baseURL
+    });
 
-const $api = axios.create({
-    withCredentials: true,
-    baseURL: API_URL
-})
+    api.interceptors.request.use((config:InternalAxiosRequestConfig) => {
+        const token = localStorage.getItem('token');
 
-$api.interceptors.request.use((config) => {
-    config.headers.Authorization = `Bearer ${localStorage.getItem('token')}`
-    return config;
-})
-
-$api.interceptors.response.use((config) => {
-    return config;
-},async (error) => {
-    const originalRequest = error.config;
-    if (error.response.status == 401 && error.config && !error.config._isRetry) {
-        originalRequest._isRetry = true;
-        try {
-            const response = await axios.get<AuthResponse>(`${API_URL}/token/update`, {withCredentials: true})
-            localStorage.setItem('token', response.data.access);
-            return $api.request(originalRequest);
-        } catch (e) {
-            console.log('НЕ АВТОРИЗОВАН')
+        if (baseURL === CLOUDAPI_URL) {
+            config.headers.Authorization = `Bearer ${token}`;
         }
-    }
-    throw error;
-})
+        return config;
 
-export default $api;
+    }, (error) => {
+        return Promise.reject(error);
+    });
+    api.interceptors.response.use((config: AxiosResponse) => {
+        return config;
+    }, async (error) => {
+        const originalRequest = error.config;
+
+        if (error.response.status === 401 && !originalRequest._isRetry) {
+            originalRequest._isRetry = true;
+
+            try {
+                const response = await axios.post<AuthResponse>(`${AUTH_API_URL}/token/update`, {}, {
+                    withCredentials: true
+                });
+                localStorage.setItem('token', response.data.access_token);
+                originalRequest.headers.Authorization = `Bearer ${response.data.access_token}`;
+                return api.request(originalRequest);
+            } catch (e) {
+                console.log('Ошибка авторизации при обновлении токена');
+            }
+        }
+        return Promise.reject(error);
+    });
+    return api;
+};

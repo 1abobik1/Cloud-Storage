@@ -1,6 +1,6 @@
 'use client';
 import React, { useState, useEffect } from 'react';
-import { getPostById, updatePost } from '@/app/lib/cloud';
+import { getPostById, updatePost } from '@/app/api/store/cloud';
 
 interface UpdatePostFormProps {
   postId: number;
