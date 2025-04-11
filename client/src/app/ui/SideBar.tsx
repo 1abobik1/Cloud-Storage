@@ -1,6 +1,6 @@
-import Link from 'next/link';
+
  import NavLinks from './navlinks';
-import AcmeLogo from '@/app/ui/acme-logo';
+
 
 export default function SideBar() {
   return (

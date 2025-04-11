@@ -3,6 +3,7 @@ import {AuthResponse} from "@/app/api/models/response/AuthResponse";
 
 
 export const API_URL = '/api'
+export const CLOUDAPI_URL = '/cloudapi'
 
 const $api = axios.create({
     withCredentials: true,
