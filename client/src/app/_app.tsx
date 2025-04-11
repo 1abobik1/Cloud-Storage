@@ -10,6 +10,7 @@ const store = new Store();
 export const Context = createContext<State>({
   store, 
  })
+ 
 
 export default function MyApp({ Component, pageProps }: AppProps) {
   

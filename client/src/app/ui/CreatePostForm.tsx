@@ -1,7 +1,7 @@
 'use client'
 import React, { useState } from 'react';
 
-import { createPost } from '@/app/lib/cloud';
+import { createPost } from '@/app/api/store/cloud';
 
 const CreatePostForm: React.FC = () => {
   const [title, setTitle] = useState('');
