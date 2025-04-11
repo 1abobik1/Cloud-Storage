@@ -1,15 +1,16 @@
 import {AxiosResponse} from 'axios';
 import {CloudResponse} from "@/app/api/models/response/CloudResponse";
-import $api from "@/app/api/http/index";
+import {FileData} from "@/app/api/models/FileData";
+import {cloudApi} from '@/app/api/http/cloud'
 
 export default class CloudService{
-    static async getAllCloud() {
+    static async getAllCloud(type:string):Promise<AxiosResponse<CloudResponse>> {
         // @ts-ignore
-        return $api.get<CloudResponse[]>('/files/all');
+        return cloudApi.get<CloudResponse>(`/files/all?type=${type}`);
     }
 
     static async createCloud(file: string,) {
-        return $api.post(`/files/one`, {file});
+        return cloudApi.post(`/files/one`, {file});
     }
    
 }
