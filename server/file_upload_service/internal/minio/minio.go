@@ -119,7 +119,7 @@ func (m *minioClient) CreateOne(ctx context.Context, file domain.FileContent, us
 
 	fileResp := dto.FileResponse{
 		Name:       file.Name,
-		Created_At: file.CreatedAt.String(),
+		Created_At: file.CreatedAt.Format(time.RFC3339),
 		ObjID:      objID,
 		Url:        url.String(),
 	}
@@ -247,9 +247,13 @@ func (m *minioClient) GetOne(ctx context.Context, objectID dto.ObjectID, userID 
 		log.Printf("Error: %v, %s", err, op)
 		return dto.FileResponse{}, OperationError{ObjectID: objectID.ObjID, Err: fmt.Errorf("error when getting the URL for the object %s: %w", objectID.ObjID, ErrFileNotFound)}
 	}
-
+	createdAtStr, okDate := objInfo.UserMetadata["Created_At"]
+	if !okDate {
+		createdAtStr = objInfo.LastModified.Format(time.RFC3339)
+	}
+	
+	fileResp.Created_At = createdAtStr
 	fileResp.Name = objInfo.UserMetadata["File_name"]
-	fileResp.Created_At = objInfo.UserMetadata["Created_At"]
 	fileResp.ObjID = objectID.ObjID
 	fileResp.Url = minioURL.String()
 
@@ -320,8 +324,13 @@ func (m *minioClient) GetAll(ctx context.Context, t string, userID int) ([]dto.F
 				errs = append(errs, err)
 				continue
 			}
+			createdAtStr, okDate := objInfo.UserMetadata["Created_At"]
+			if !okDate {
+				createdAtStr = objInfo.LastModified.Format(time.RFC3339)
+			}
+
+			fileResp.Created_At = createdAtStr
 			fileResp.Name = objInfo.UserMetadata["File_name"]
-			fileResp.Created_At = objInfo.UserMetadata["Created_At"]
 			fileResp.ObjID = object.Key
 			fileResp.Url = presignedURL.String()
 
