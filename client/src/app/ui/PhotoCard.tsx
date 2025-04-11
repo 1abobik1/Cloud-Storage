@@ -1,10 +1,6 @@
 import React from 'react';
-import { FileData } from '@/app/api/store/cloud';
+import {FileData} from '@/app/api/store/cloud';
 import Link from 'next/link';
-
-
-
-
 
 
 const PhotoCard: React.FC<FileData> = ({obj_id,created_at,name,url}) => {
@@ -21,10 +17,10 @@ const PhotoCard: React.FC<FileData> = ({obj_id,created_at,name,url}) => {
       */}
       </div>
   </div>
-      
-      
-   
-    
+
+
+
+
   );
 };
 

@@ -1,6 +1,5 @@
 import {AxiosResponse} from 'axios';
 import {CloudResponse} from "@/app/api/models/response/CloudResponse";
-import {FileData} from "@/app/api/models/FileData";
 import {cloudApi} from '@/app/api/http/cloud'
 
 export default class CloudService{
@@ -12,5 +11,5 @@ export default class CloudService{
     static async createCloud(file: string,) {
         return cloudApi.post(`/files/one`, {file});
     }
-   
+
 }

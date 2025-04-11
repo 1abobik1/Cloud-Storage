@@ -1,4 +1,3 @@
-
 import {makeAutoObservable} from "mobx";
 import AuthService from "@/app/api/services/AuthServices";
 import axios from 'axios';
@@ -6,12 +5,11 @@ import {AuthResponse} from "../models/response/AuthResponse";
 import {AUTH_API_URL} from "@/app/api/http/urls";
 
 
-
 export default class Store {
-   
+
     code = 0;
     isAuth = false;
-   
+
     isLoading = false;
 
     constructor() {
@@ -22,7 +20,7 @@ export default class Store {
         this.isAuth = bool;
     }
 
-    
+
 
     setCode(code: number) {
         this.code = code;
@@ -30,7 +28,7 @@ export default class Store {
     getCode() {
         return this.code;
     }
-    
+
 
     setLoading(bool: boolean) {
         this.isLoading = bool;
@@ -39,13 +37,12 @@ export default class Store {
     async login(email: string, password: string,platform: string) {
         try {
             const response = await AuthService.login(email, password,platform);
-            console.log(response)
-            localStorage.setItem('token', response.data.accessToken);
+            localStorage.setItem('token', response.data.access_token);
             this.setAuth(true);
-            
+
         } catch (e) {
             // @ts-ignore
-            console.log(e.response?.data?.message);
+            console.log(e.response?.data);
         }
     }
 
@@ -64,20 +61,19 @@ export default class Store {
     async signup(username: string, email: string, password: string) {
         try {
             const response = await AuthService.signup(username, email, password);
-            console.log(response)
-            localStorage.setItem('token', response.data.accessToken);
+            localStorage.setItem('token', response.data.access_token);
             this.setAuth(true);
-            
+
         } catch (e) {
             // @ts-ignore
             console.log(e.response?.data?.message);
-        
+
         if (e.response?.status === 409) {
-           
+
             alert('Аккаунт на эту почту уже зарегистрированы.');
-           
+
           } else {
-           
+
             console.error(e);
             alert('Произошла ошибка при регистрации');
           }
@@ -86,11 +82,10 @@ export default class Store {
 
     async logout() {
         try {
-            const response = await AuthService.logout();
-            console.log(response)
+            await AuthService.logout();
             localStorage.removeItem('token');
             this.setAuth(false);
-            
+
         } catch (e: any) {
             console.log(e.response?.data?.message);
         }
@@ -100,18 +95,16 @@ export default class Store {
         this.setLoading(true);
         try {
             const response = await axios.post<AuthResponse>(
-                `${AUTH_API_URL}/token/update/`,
+                `${AUTH_API_URL}/token/update`,
                 {},
                 {
                     withCredentials: true
                 }
             );
-            console.log(response)
-            localStorage.setItem('token', response.data.accessToken);
+            localStorage.setItem('token', response.data.access_token);
             this.setAuth(true);
-            
-          
             return Promise.resolve();
+
         } catch (e: any) {
             if (e.response?.status === 401) {
                 this.setAuth(false);

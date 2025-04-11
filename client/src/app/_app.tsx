@@ -1,6 +1,6 @@
 'use client'
-import type { AppProps } from 'next/app'
-import React, { createContext } from 'react';
+import type {AppProps} from 'next/app'
+import React, {createContext} from 'react';
 import Store from "@/app/api/store/store";
 
 interface State {
@@ -8,12 +8,12 @@ interface State {
 }
 const store = new Store();
 export const Context = createContext<State>({
-  store, 
+  store,
  })
- 
+
 
 export default function MyApp({ Component, pageProps }: AppProps) {
-  
+
 <Context.Provider value={{store}}>
   return <Component {...pageProps} />
 </Context.Provider>
