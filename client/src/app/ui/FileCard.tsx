@@ -1,17 +1,33 @@
-import React from 'react';
-import {FileData} from '@/app/api/models/FileData'
-import Link from 'next/link';
+import React, { useState } from 'react';
+import CloudService from '../api/services/CloudServices';
+
+import {
+  ArrowDownTrayIcon,
+  TrashIcon
+} from '@heroicons/react/24/outline';
+import ModalDelete from './ModalDelete';
 
 
-const FileCard: React.FC<FileData> = ({ obj_id, created_at, name, url }) => {
+
+
+export type FileCardData = {
+  name: string;
+  created_at: string;
+  obj_id: string;
+  url: string;
+  type: string;
+  onDelete: (obj_id: string) => void;
+};
+
+const FileCard: React.FC<FileCardData> = ({ obj_id, created_at, name, url, type, onDelete }) => {
+  const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
   const handleDownload = async () => {
     try {
       const response = await fetch(url);
       if (!response.ok) {
         throw new Error('Ошибка при скачивании файла');
       }
-  
-      
+
       const blob = await response.blob();
       const link = document.createElement('a');
       link.href = URL.createObjectURL(blob);
@@ -22,21 +38,70 @@ const FileCard: React.FC<FileData> = ({ obj_id, created_at, name, url }) => {
     }
   };
 
+  const handleDelete = async () => {
+    try {
+      const response = await CloudService.deleteFile(type, obj_id); // Вызов метода с type и obj_id
+      console.log('Файл успешно удален:', response);
+      setIsModalOpen(false);
+      onDelete(obj_id); // Удаляем файл из списка в родительском компоненте
+    } catch (error) {
+      console.error('Ошибка при удалении файла:', error);
+      // Можно показать сообщение об ошибке пользователю
+    }
+  };
+
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    return date.toLocaleString(); // Выводит дату в формате, зависящем от локали
+  };
+
+const DeleteIcon =TrashIcon
+const DownloadIcon = ArrowDownTrayIcon
+
+
+
+const handleOpenModal = () => {
+  setIsModalOpen(true); // Открываем модальное окно при нажатии "Удалить"
+};
+
+const handleCloseModal = () => {
+  setIsModalOpen(false); // Закрываем модальное окно
+};
+
   return (
-    <div className="bg-white shadow-md rounded-lg p-4 mb-4 hover:bg-gray-100 transition border-b">
-      <div className="w-[50%]">
-      <button
-    onClick={handleDownload}
-    className="bg-blue-500 hover:bg-blue-600 text-white py-2 px-4 rounded"
-  >
-    Скачать {name}
-  </button>
+    <div className="p-4 mx-auto bg-white border-t border-b border-gray-200 w-full">
+      <div className="flex justify-between items-center">
+        <div>{name}</div>
+        <div className="w-60% flex items-center">
+  <div className="mr-5 hidden sm:block">{formatDate(created_at)}</div> {/* Скрывается на мобильных */}
+  <div>
+            
+            <button
+              onClick={handleDownload}
+              className=" w-6 mx-1"
+            >
+              <DownloadIcon/>
+            </button>
+            <button
+              onClick={handleOpenModal} // Теперь handleDelete без параметров
+              className='w-6  mx-1'
+            >
+              <DeleteIcon/>
+            </button>
+         </div>
+          
+        </div>
       </div>
+      {/* Модальное окно для подтверждения удаления */}
+      {isModalOpen && (
+        <ModalDelete
+          message="Вы уверены, что хотите удалить этот файл?"
+          onConfirm={handleDelete}
+          onCancel={handleCloseModal}
+        />
+      )}
     </div>
   );
 };
-
-
-
 
 export default FileCard;

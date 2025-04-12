@@ -1,7 +1,7 @@
 import React from 'react';
 import TypeBlock from '@/app/components/TypeBlock';
-import FileUploader from '@/app/components/FileUploader';
-import FileUploadButton from '@/app/ui/FileUploadButton';
+
+
 
 const page = () => {
 
@@ -13,7 +13,7 @@ const page = () => {
     <div className="flex-1">
       <TypeBlock type="photo" />
     </div>
-    <div className="flex-1">
+    {/* <div className="flex-1">
       <TypeBlock type="video" />
     </div>
     <div className="flex-1">
@@ -22,7 +22,7 @@ const page = () => {
     <div className="flex-1">
       <TypeBlock type="unknown" />
     </div>
-    
+     */}
   </div>
   );
 };

@@ -16,4 +16,8 @@ export default class CloudService{
         });
       }
 
+      static async deleteFile(type:string,obj_id: string,) {
+        return cloudApi.delete(`files/one?id=${obj_id}&type=${type}`);
+    }
+
 }
