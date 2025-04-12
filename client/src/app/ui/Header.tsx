@@ -1,9 +1,6 @@
 'use client';
-
-import React from 'react';
+import React, { useState } from 'react';
 import { usePathname } from 'next/navigation';
-
-
 import {
     HomeIcon,
     Squares2X2Icon,
@@ -13,11 +10,8 @@ import {
 import {
     ArrowUpOnSquareIcon
 } from '@heroicons/react/24/outline';
-
 import ProfileCircle from './ProfileCircle';
-
-
-
+import FileUploader from '../components/FileUploader';
 const links = [
     { name: 'Home', href: '/cloud/home', icon: HomeIcon },
     { name: 'Workspaces', href: '/cloud/workspaces', icon: Squares2X2Icon },
@@ -38,11 +32,8 @@ const Header = () => {
                 <span className="ml-2 mt-1 text-sm font-semibold text-gray-900">{activeLink.name}</span>
             </div>
             <div className='flex flex-row py-6 mx-5'>
-                <button className='flex items-center  bg-blue-500 rounded-lg   px-10'>
-                    <LinkIcon className="w-6 text-white" />
-                    <p className=' text-white'>Upload file</p>
-                </button>
-                <div className='mx-5'><ProfileCircle /></div>
+            <FileUploader/>
+            <div className='mx-5'><ProfileCircle /></div>
             </div>
         </div>
     );

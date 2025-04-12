@@ -1,93 +1,114 @@
 'use client'
 
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import CloudService from '../api/services/CloudServices';
-
+import {
+  ArrowUpOnSquareIcon
+} from '@heroicons/react/24/outline';
 const FileUploader = () => {
-  const [files, setFiles] = useState<File[]>([]);
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const inputRef = useRef<HTMLInputElement | null>(null);
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const [toastType, setToastType] = useState<'success' | 'error' | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
-  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const selectedFiles = event.target.files;
-    if (selectedFiles && selectedFiles.length > 0) {
-      setFiles(Array.from(selectedFiles));
-    }
+  const handleButtonClick = () => {
+    inputRef.current?.click();
   };
 
-  const handleUpload = async () => {
-    if (files.length === 0) {
-      setErrorMessage('Файл не выбран');
-      return;
-    }
+  const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const selectedFiles = event.target.files;
+    if (!selectedFiles || selectedFiles.length === 0) return;
 
     const formData = new FormData();
-    files.forEach((file) => {
-      formData.append('file', file); // именно оригинальный File
+    Array.from(selectedFiles).forEach((file) => {
+      formData.append('files', file);
     });
 
     try {
       setIsLoading(true);
-      const response = await CloudService.createCloud(formData);
+      setToastMessage(null);
+      setToastType(null);
+
+      const response = await CloudService.createClouds(formData);
 
       if (response.status !== 200) {
         throw new Error('Ошибка при загрузке файла');
       }
-      setSuccessMessage('Файл успешно загружен!');
-      setErrorMessage(null);
+
+      setToastMessage('Файл успешно загружен!');
+      setToastType('success');
     } catch (error) {
-      setErrorMessage('Не удалось загрузить файл.');
-      setSuccessMessage(null);
+      setToastMessage('Не удалось загрузить файл.');
+      setToastType('error');
     } finally {
       setIsLoading(false);
+      if (inputRef.current) inputRef.current.value = '';
+
+      // Автоматическое скрытие через 3 секунды
+      setTimeout(() => {
+        setToastMessage(null);
+        setToastType(null);
+      }, 3000);
     }
   };
-
-  const renderFilePreview = (file: File) => {
-    // Если файл изображение, показываем картинку
-    if (file.type.startsWith('image/')) {
-      return <img src={URL.createObjectURL(file)} alt={file.name} className="match-image" />;
-    }
-    // Для других типов файлов показываем ссылку для скачивания
-    return <a href={URL.createObjectURL(file)} download={file.name}>Скачать {file.name}</a>;
-  };
-
+  const LinkIcon = ArrowUpOnSquareIcon
   return (
-    <div className="p-4 max-w-md mx-auto bg-white rounded shadow">
-      <h2 className="text-xl font-bold mb-4">Загрузка файлов</h2>
+    <>
+      <div className=" max-w-md mx-auto  text-center">
+        
+        <input
+          type="file"
+          multiple
+          ref={inputRef}
+          style={{ display: 'none' }}
+          onChange={handleFileChange}
+        />
 
-      <input
-        type="file"
-        multiple
-        onChange={handleFileChange}
-      />
+        <button
+          onClick={handleButtonClick}
+          disabled={isLoading}
+          className="bg-blue-500 hover:bg-blue-600 text-white py-2 px-4 rounded"
+        >
+          <div className='flex'><LinkIcon className="w-6  text-white mr-1" /><div className='mt-1'>{isLoading ? 'Загрузка...' : 'Загрузить файл'}</div></div>
+        </button>
+      </div>
 
-      <button
-        onClick={handleUpload}
-        disabled={isLoading}
-        className="mt-2 bg-blue-500 hover:bg-blue-600 text-white py-2 px-4 rounded"
+      {toastMessage && (
+  <div
+    className={`
+      fixed bottom-4 right-4 w-72 px-4 py-3 rounded shadow-lg z-50 transition-all duration-300
+      text-white flex items-center justify-between
+      ${toastType === 'success' ? 'bg-green-500' : toastType === 'error' ? 'bg-red-500' : 'bg-blue-500'}
+    `}
+  >
+    <span className="text-sm">{toastMessage}</span>
+
+    {isLoading && (
+      <svg
+        className="animate-spin h-5 w-5 ml-3 text-white"
+        xmlns="http://www.w3.org/2000/svg"
+        fill="none"
+        viewBox="0 0 24 24"
       >
-        {isLoading ? 'Загрузка...' : 'Загрузить'}
-      </button>
+        <circle
+          className="opacity-25"
+          cx="12"
+          cy="12"
+          r="10"
+          stroke="currentColor"
+          strokeWidth="4"
+        />
+        <path
+          className="opacity-75"
+          fill="currentColor"
+          d="M4 12a8 8 0 018-8v8H4z"
+        />
+      </svg>
+    )}
+  </div>
+)}
 
-      {successMessage && <p className="text-green-600 mt-2">{successMessage}</p>}
-      {errorMessage && <p className="text-red-600 mt-2">{errorMessage}</p>}
-
-      {files.length > 0 && (
-        <div className="mt-4">
-          <h3>Файлы для загрузки:</h3>
-          <ul>
-            {files.map((file, index) => (
-              <li key={index}>
-                <p>{file.name}</p>
-                {renderFilePreview(file)} {/* Универсальная отрисовка файла */}
-              </li>
-            ))}
-          </ul>
-        </div>
-      )}
-    </div>
+    </>
   );
 };
 
