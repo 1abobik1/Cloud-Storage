@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import { FileData } from "@/app/api/models/FileData";
 import CloudService from "../api/services/CloudServices";
 import FileUploader from "./FileUploader";
-import FileCard from "@/app/ui/PhotoCard";
+import FileCard from "@/app/ui/FileCard";
 
 export default function TypeBlock({type}) {
   const [file, setFile] = useState<FileData[]>([]);

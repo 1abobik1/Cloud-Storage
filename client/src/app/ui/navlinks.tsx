@@ -15,8 +15,7 @@ import { usePathname } from 'next/navigation';
 const links = [
   { name: 'Home', href: '/cloud/home', icon: HomeIcon },
   {name: 'Workspaces',href: '/cloud/workspaces',icon: Squares2X2Icon,},
-  { name: 'Search', href: '/cloud/search', icon: MagnifyingGlassIcon },
-  { name: 'Notification', href: '/cloud/notifications', icon:BellIcon  }
+  
   
 ];
 
