@@ -1,9 +1,9 @@
 import React from 'react';
-import {FileData} from '@/app/api/store/cloud';
+import {FileData} from '@/app/api/models/FileData'
 import Link from 'next/link';
 
 
-const PhotoCard: React.FC<FileData> = ({obj_id,created_at,name,url}) => {
+const FileCard: React.FC<FileData> = ({obj_id,created_at,name,url}) => {
   return (
   <div className="bg-white shadow-md rounded-lg p-4 mb-4 hover:bg-gray-100 transition border-b">
     <div className='w-[50%]'>
@@ -24,4 +24,4 @@ const PhotoCard: React.FC<FileData> = ({obj_id,created_at,name,url}) => {
   );
 };
 
-export default PhotoCard;
+export default FileCard;

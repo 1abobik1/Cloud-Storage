@@ -8,8 +8,12 @@ export default class CloudService{
         return cloudApi.get<CloudResponse>(`/files/all?type=${type}`);
     }
 
-    static async createCloud(file: string,) {
-        return cloudApi.post(`/files/one`, {file});
-    }
+    static async createCloud(formData: FormData) {
+        return cloudApi.post(`/files/one`, formData, {
+          headers: {
+            'Content-Type': 'multipart/form-data',
+          },
+        });
+      }
 
 }
