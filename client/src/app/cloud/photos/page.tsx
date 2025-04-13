@@ -13,16 +13,7 @@ const page = () => {
     <div className="flex-1">
       <TypeBlock type="photo" />
     </div>
-    {/* <div className="flex-1">
-      <TypeBlock type="video" />
-    </div>
-    <div className="flex-1">
-      <TypeBlock type="text" />
-    </div>
-    <div className="flex-1">
-      <TypeBlock type="unknown" />
-    </div>
-     */}
+    
   </div>
   );
 };

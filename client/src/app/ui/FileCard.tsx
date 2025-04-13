@@ -6,6 +6,8 @@ import {
   TrashIcon
 } from '@heroicons/react/24/outline';
 import ModalDelete from './ModalDelete';
+import TypeFileIcon from './TypeFileIcon';
+import Link from 'next/link';
 
 
 
@@ -70,8 +72,10 @@ const handleCloseModal = () => {
 
   return (
     <div className="p-4 mx-auto bg-white border-t border-b border-gray-200 w-full">
+      
       <div className="flex justify-between items-center">
-        <div>{name}</div>
+        
+        <div><TypeFileIcon type={type}/> <Link href={url} target="_blank" rel="noopener noreferrer" >{name}</Link> </div>
         <div className="w-60% flex items-center">
   <div className="mr-5 hidden sm:block">{formatDate(created_at)}</div> {/* Скрывается на мобильных */}
   <div>
