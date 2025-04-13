@@ -16,7 +16,7 @@ export default function SideBar() {
 
   return (
     <>
-      {/* Бургер кнопка - видна только на маленьких экранах */}
+      
       <div className="md:hidden flex justify-between items-center px-4 py-2 border-b border-gray-200">
         <button onClick={() => setIsOpen(!isOpen)} className="text-gray-600">
           {isOpen ? <XIcon className="w-6 h-6" /> : <MenuIcon className="w-6 h-6" />}
@@ -24,7 +24,7 @@ export default function SideBar() {
         <span className="text-lg font-semibold">Menu</span>
       </div>
 
-      {/* Боковая панель */}
+      
       <div className={clsx(
         'flex-col border-r border-gray-200 bg-white w-60 h-full px-4 py-6 md:flex transition-transform duration-300',
         {
@@ -32,7 +32,7 @@ export default function SideBar() {
           'absolute z-50 left-0 top-0 h-screen shadow-lg md:relative': isOpen,
         }
       )}>
-        <NavLinks />
+      <NavLinks />
       </div>
     </>
   );

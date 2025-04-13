@@ -9,9 +9,7 @@ const LoginForm = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const { store } = useContext(Context);
-  const handleCaptcha = (value: string | null) => {
-    // console.log("CAPTCHA value:", value);
-  };
+  
 
 
 
@@ -73,7 +71,7 @@ const LoginForm = () => {
         {/* Тут капча важно */}
             <ReCAPTCHA
         sitekey="6LffSw4rAAAAAENeTm2aejDbLWa2QvbO8eOkjRlL"
-        onChange={handleCaptcha}
+        
       />
 
 

@@ -3,20 +3,14 @@ import { useEffect, useState } from "react";
 import { FileData } from "@/app/api/models/FileData";
 import CloudService from "../api/services/CloudServices";
 import FileCard from "@/app/ui/FileCard";
-import {
-  ArrowLongDownIcon,
-  ArrowLongDownIcon,
-  ArrowLongUpIcon
-} from '@heroicons/react/24/outline';
-import { ArrowLongUpIcon } from "@heroicons/react/24/solid";
-
+import TypeFileIcon from "../ui/TypeFileIcon";
 
 export default function TypeBlock({ type }) {
   const [file, setFile] = useState<FileData[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [isError, setIsError] = useState<boolean>(false);
   const [timeSort,setTimeSort] = useState<boolean>(false)
-  // Состояния для фильтрации и сортировки
+  const [nameSortAsc, setNameSortAsc] = useState<boolean>(true);
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc'); // сортировка по возрастанию или убыванию
   const [filteredFiles, setFilteredFiles] = useState<FileData[]>([]);
 
@@ -66,32 +60,68 @@ export default function TypeBlock({ type }) {
     sortFiles(order); // Пересортировываем файлы
   };
 
+  const handleNameSortChange = () => {
+    const sorted = [...filteredFiles].sort((a, b) => {
+      return nameSortAsc
+        ? a.name.localeCompare(b.name)
+        : b.name.localeCompare(a.name);
+    });
+    setFilteredFiles(sorted);
+    setNameSortAsc(!nameSortAsc);
+  };
+  
+
+
   if (isLoading) return <p>Загрузка...</p>;
   if (isError) return <p>Произошла ошибка при загрузке данных.</p>;
+
 
   const handleDelete = (id: string) => {
     setFilteredFiles(prevFiles => prevFiles.filter(file => file.obj_id !== id)); // Убираем удаленный файл из состояния
   };
 
- const ArrowDownIcon = ArrowLongDownIcon
- const  ArrowUpIcon = ArrowLongUpIcon
-  
+
 
   return (
     <div className="p-4 mx-auto bg-white rounded shadow w-100vw">
-      <h2 className="text-xl font-bold mb-4">{type}</h2>
-
+      <h2 className="text-xl font-bold mb-4"><TypeFileIcon type={type}/></h2>
+      <div className="flex flex-row justify-between">
       
-      {timeSort &&(<div className="mb-4">
-        <button
-          onClick={() =>{ handleSortChange('desc');
-            setTimeSort(true)}
-          }
-          className="bg-blue-500 hover:bg-blue-600 text-white py-2 px-4 rounded">
-          Сортировать по дате (по убыванию)
-        </button>
-      </div>)}
 
+      <div className="mb-4">
+  <button
+    onClick={handleNameSortChange}
+    className="bg-blue-500 hover:bg-blue-600 text-white py-2 px-4 rounded flex items-center"
+  >
+    Названию&nbsp;
+    {nameSortAsc ? (
+      <span className="ml-1">▲</span>
+    ) : (
+      <span className="ml-1">▼</span>
+    )}
+  </button>
+</div>
+
+
+      <div className="mb-4 mr-28">
+  <button
+    onClick={() => {
+      handleSortChange(timeSort ? 'desc' : 'asc');
+      setTimeSort(!timeSort);
+    }}
+    className="bg-blue-500 hover:bg-blue-600 text-white py-2 px-4 rounded flex items-center"
+  >
+    Дате&nbsp;
+    {timeSort ? (
+      <span className="ml-2">▲</span> // стрелка вверх (по возрастанию)
+    ) : (
+      <span className="ml-2">▼</span> // стрелка вниз (по убыванию)
+    )}
+  </button>
+
+</div>
+
+</div>
       {/* Отображаем отсортированные файлы */}
       {filteredFiles.map((item) => (
         <FileCard
