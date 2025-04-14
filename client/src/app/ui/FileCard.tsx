@@ -1,11 +1,10 @@
-import React, { useState } from 'react';
+import React, {useState} from 'react';
 import CloudService from '../api/services/CloudServices';
 
-import {
-  ArrowDownTrayIcon,
-  TrashIcon
-} from '@heroicons/react/24/outline';
+import {ArrowDownTrayIcon, TrashIcon} from '@heroicons/react/24/outline';
 import ModalDelete from './ModalDelete';
+import {cryptoHelper} from "@/app/api/utils/CryptoHelper";
+import {getMimeTypeFromName} from "@/app/api/utils/getMimeTypeFromName";
 import TypeFileIcon from './TypeFileIcon';
 import Link from 'next/link';
 
@@ -30,13 +29,19 @@ const FileCard: React.FC<FileCardData> = ({ obj_id, created_at, name, url, type,
         throw new Error('Ошибка при скачивании файла');
       }
 
-      const blob = await response.blob();
+      const encryptedBlob = await response.blob();
+      const mimeType = getMimeTypeFromName(name); // получаем тип по имени файла
+      const encryptedFile = new File([encryptedBlob], name, { type: mimeType });
+
+      const decryptedBlob = await cryptoHelper.decryptFile(encryptedFile);
+
       const link = document.createElement('a');
-      link.href = URL.createObjectURL(blob);
+      link.href = URL.createObjectURL(new Blob([decryptedBlob], { type: mimeType }));
       link.download = name;
       link.click();
+      URL.revokeObjectURL(link.href);
     } catch (error) {
-      console.error('Ошибка скачивания файла:', error);
+      console.error('Ошибка при скачивании или расшифровке файла:', error);
     }
   };
 
@@ -72,14 +77,14 @@ const handleCloseModal = () => {
 
   return (
     <div className="p-4 mx-auto bg-white border-t border-b border-gray-200 w-full">
-      
+
       <div className="flex justify-between items-center">
-        
+
         <div><TypeFileIcon type={type}/> <Link href={url} target="_blank" rel="noopener noreferrer" >{name}</Link> </div>
         <div className="w-60% flex items-center">
   <div className="mr-5 hidden sm:block">{formatDate(created_at)}</div> {/* Скрывается на мобильных */}
   <div>
-            
+
             <button
               onClick={handleDownload}
               className=" w-6 mx-1"
@@ -93,7 +98,7 @@ const handleCloseModal = () => {
               <DeleteIcon/>
             </button>
          </div>
-          
+
         </div>
       </div>
       {/* Модальное окно для подтверждения удаления */}
