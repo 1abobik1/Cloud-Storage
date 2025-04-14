@@ -5,6 +5,10 @@ import {ArrowDownTrayIcon, TrashIcon} from '@heroicons/react/24/outline';
 import ModalDelete from './ModalDelete';
 import {cryptoHelper} from "@/app/api/utils/CryptoHelper";
 import {getMimeTypeFromName} from "@/app/api/utils/getMimeTypeFromName";
+import TypeFileIcon from './TypeFileIcon';
+import Link from 'next/link';
+
+
 
 
 export type FileCardData = {
@@ -41,7 +45,6 @@ const FileCard: React.FC<FileCardData> = ({ obj_id, created_at, name, url, type,
     }
   };
 
-
   const handleDelete = async () => {
     try {
       const response = await CloudService.deleteFile(type, obj_id); // Вызов метода с type и obj_id
@@ -74,8 +77,10 @@ const handleCloseModal = () => {
 
   return (
     <div className="p-4 mx-auto bg-white border-t border-b border-gray-200 w-full">
+
       <div className="flex justify-between items-center">
-        <div>{name}</div>
+
+        <div><TypeFileIcon type={type}/> <Link href={url} target="_blank" rel="noopener noreferrer" >{name}</Link> </div>
         <div className="w-60% flex items-center">
   <div className="mr-5 hidden sm:block">{formatDate(created_at)}</div> {/* Скрывается на мобильных */}
   <div>
