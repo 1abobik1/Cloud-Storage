@@ -19,15 +19,6 @@ const LoginForm = () => {
       }
     };
   
-    const handleSubmit = () => {
-      if (!captchaVerified) {
-        alert('Please complete the captcha');
-      } else {
-        alert('Captcha passed, form submitted');
-      }
-    };
-    
-    
 
   return (
     <div className="flex items-center justify-center min-h-screen bg-gray-100">
@@ -85,10 +76,12 @@ const LoginForm = () => {
             </select>
 
         {/* Тут капча важно */}
-        <ReCAPTCHA
-        sitekey="6LffSw4rAAAAAENeTm2aejDbLWa2QvbO8eOkjRlL"
-        onChange={handleCaptchaChange}
-      />
+        <div style={{ transform: "scale(0.9)", transformOrigin: "0 0", maxWidth: "100%" }}>
+  <ReCAPTCHA
+    sitekey="6LffSw4rAAAAAENeTm2aejDbLWa2QvbO8eOkjRlL"
+    onChange={handleCaptchaChange}
+  />
+</div>
 
 
           </div>
