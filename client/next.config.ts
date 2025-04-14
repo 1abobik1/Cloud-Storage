@@ -1,18 +1,20 @@
-import type { NextConfig } from "next";
+import type {NextConfig} from "next";
 
 const nextConfig: NextConfig = {
- 
-  
-  
+  env: {
+    SECRET_KEY: process.env.SECRET_KEY,
+  },
+
+
   async rewrites() {
     return [
-      
+
       {
-        source: '/api/:path*',
+        source: '/auth_api/:path*',
         destination: 'http://localhost:8080/:path*',
       },
       {
-        source: '/cloudapi/:path*',
+        source: '/file_api/:path*',
         destination: 'http://localhost:8081/:path*',
       },
     ];

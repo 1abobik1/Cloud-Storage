@@ -1,22 +1,16 @@
-'use client';
-
-import {
-  HomeIcon,
-  Squares2X2Icon,
-  BellIcon,
-  MagnifyingGlassIcon
-} from '@heroicons/react/24/outline';
 
 
 import clsx from 'clsx';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import TypeFileIcon from './TypeFileIcon';
 
 const links = [
-  { name: 'Home', href: '/cloud/home', icon: HomeIcon },
-  {name: 'Workspaces',href: '/cloud/workspaces',icon: Squares2X2Icon,},
-  { name: 'Search', href: '/cloud/search', icon: MagnifyingGlassIcon },
-  { name: 'Notification', href: '/cloud/notifications', icon:BellIcon  }
+  {name: 'Home', href: '/cloud/home', icontype: 'home'  },
+  {name: 'Videos',href: '/cloud/videos',icontype: 'video' ,},
+  {name: 'Photos',href: '/cloud/photos',icontype: 'photo' ,},
+  {name: 'Docs',href: '/cloud/docs',icontype: 'text' ,},
+  {name: 'Others',href: '/cloud/unknown',icontype: 'unknown' ,},
   
 ];
 
@@ -27,22 +21,23 @@ export default function NavLinks() {
   return (
     <>
       {links.map((link) => {
-        const LinkIcon = link.icon;
+       
         return (
+          
           <Link
           key={link.name}
           href={link.href}
-          
           className={clsx(
-            'flex h-[36px]  grow items-center justify-center text-gray-500 gap-2 rounded-md text-sm font-medium  hover:text-blue-500 md:flex-none md:justify-start md:p-2 md:px-3',
+            'flex h-[36px] w-full items-center gap-2 rounded-md text-sm font-medium text-gray-500 hover:text-blue-500 md:p-2 md:px-3',
             {
               'bg-blue-300 text-blue-600': pathname === link.href,
-            },
+            }
           )}
         >
-            <LinkIcon className="w-6" />
-            <p className="hidden md:block">{link.name}</p>
-          </Link>
+          <TypeFileIcon type={link.icontype} size={20} />
+          <p className="text-left min-w-[80px] truncate">{link.name}</p>
+        </Link>
+          
         );
       })}
     </>
