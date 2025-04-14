@@ -11,7 +11,23 @@ const LoginForm = () => {
   const { store } = useContext(Context);
   
 
-
+    const [captchaVerified, setCaptchaVerified] = useState(false);
+  
+    const handleCaptchaChange = (value: string | null) => {
+      if (value) {
+        setCaptchaVerified(true);
+      }
+    };
+  
+    const handleSubmit = () => {
+      if (!captchaVerified) {
+        alert('Please complete the captcha');
+      } else {
+        alert('Captcha passed, form submitted');
+      }
+    };
+    
+    
 
   return (
     <div className="flex items-center justify-center min-h-screen bg-gray-100">
@@ -69,9 +85,9 @@ const LoginForm = () => {
             </select>
 
         {/* Тут капча важно */}
-            <ReCAPTCHA
+        <ReCAPTCHA
         sitekey="6LffSw4rAAAAAENeTm2aejDbLWa2QvbO8eOkjRlL"
-        
+        onChange={handleCaptchaChange}
       />
 
 
