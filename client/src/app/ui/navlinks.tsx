@@ -34,8 +34,11 @@ export default function NavLinks() {
             }
           )}
         >
-          <TypeFileIcon type={link.icontype} size={20} />
-          <p className="text-left min-w-[80px] truncate">{link.name}</p>
+         <div className="ml-2  flex items-center">
+  <TypeFileIcon type={link.icontype} size={20} />
+  <p className="text-left min-w-[80px] truncate ml-2">{link.name}</p>
+</div>
+
         </Link>
           
         );
