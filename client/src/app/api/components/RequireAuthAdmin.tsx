@@ -28,6 +28,7 @@ const RequireAuthAdmin: FC<Props> = ({ children }) => {
             setIsAuthorized(false);
           }
         }
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
       } catch (error) {
         setIsAuthorized(false);
       } finally {
