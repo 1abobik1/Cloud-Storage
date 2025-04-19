@@ -31,7 +31,7 @@ func (h *Handler) CreateOne(c *gin.Context) {
 	// Получаем файл из запроса
 	file, err := c.FormFile("file")
 	if err != nil {
-		log.Printf("Error: %v,  %s", err, op)
+		log.Printf("Error: %v, %s", err, op)
 		c.JSON(http.StatusBadRequest, erresponse.ErrorResponse{
 			Status:  http.StatusBadRequest,
 			Error:   "No file is received",
@@ -42,7 +42,7 @@ func (h *Handler) CreateOne(c *gin.Context) {
 
 	f, err := file.Open()
 	if err != nil {
-		log.Printf("Error: %v,  %s", err, op)
+		log.Printf("Error: %v, %s", err, op)
 		c.JSON(http.StatusInternalServerError, erresponse.ErrorResponse{
 			Status:  http.StatusInternalServerError,
 			Error:   "Unable to open the file",
@@ -55,7 +55,7 @@ func (h *Handler) CreateOne(c *gin.Context) {
 	// Читаем содержимое файла в байтовый срез
 	fileBytes, err := io.ReadAll(f)
 	if err != nil {
-		log.Printf("Error: %v,  %s", err, op)
+		log.Printf("Error: %v, %s", err, op)
 		c.JSON(http.StatusInternalServerError, erresponse.ErrorResponse{
 			Status:  http.StatusInternalServerError,
 			Error:   "Unable to read the file",
@@ -64,7 +64,11 @@ func (h *Handler) CreateOne(c *gin.Context) {
 		return
 	}
 
-	fileFormat := http.DetectContentType(fileBytes)
+	// Пытаемся получить mime_type из формы. Если не передан - используем http.DetectContentType.
+	fileFormat := c.PostForm("mime_type")
+	if fileFormat == "" {
+		fileFormat = http.DetectContentType(fileBytes)
+	}
 
 	now := time.Now().UTC()
 	// Создаем структуру FileData для хранения данных файла
@@ -79,7 +83,7 @@ func (h *Handler) CreateOne(c *gin.Context) {
 
 	fileResp, err := h.minioService.CreateOne(c, fileData, userID)
 	if err != nil {
-		log.Printf("Error: %v,  %s", err, op)
+		log.Printf("Error: %v, %s", err, op)
 		c.JSON(http.StatusInternalServerError, erresponse.ErrorResponse{
 			Status:  http.StatusInternalServerError,
 			Error:   "Unable to save the file",
@@ -89,9 +93,9 @@ func (h *Handler) CreateOne(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{
-		"status":  http.StatusOK,
-		"message": "File uploaded successfully",
-		"file_data":    fileResp,
+		"status":    http.StatusOK,
+		"message":   "File uploaded successfully",
+		"file_data": fileResp,
 	})
 }
 
@@ -109,7 +113,7 @@ func (h *Handler) CreateMany(c *gin.Context) {
 	// Получаем multipart форму из запроса
 	form, err := c.MultipartForm()
 	if err != nil {
-		log.Printf("Error: %v,  %s", err, op)
+		log.Printf("Error: %v, %s", err, op)
 		c.JSON(http.StatusBadRequest, erresponse.ErrorResponse{
 			Status:  http.StatusBadRequest,
 			Error:   "Invalid form",
@@ -121,7 +125,7 @@ func (h *Handler) CreateMany(c *gin.Context) {
 	// Получаем файлы из формы
 	files := form.File["files"]
 	if files == nil {
-		log.Printf("Error: %v,  %s", err, op)
+		log.Printf("Error: %v, %s", err, op)
 		c.JSON(http.StatusBadRequest, erresponse.ErrorResponse{
 			Status:  http.StatusBadRequest,
 			Error:   "No files are received",
@@ -130,14 +134,17 @@ func (h *Handler) CreateMany(c *gin.Context) {
 		return
 	}
 
+	// Получаем массив mime_type, если передан
+	mimeTypes := c.PostFormArray("mime_type")
+
 	// Создаем map для хранения данных файлов
 	data := make(map[string]domain.FileContent)
 
 	// Проходим по каждому файлу в форме
-	for _, file := range files {
+	for i, file := range files {
 		f, err := file.Open()
 		if err != nil {
-			log.Printf("Error: %v,  %s", err, op)
+			log.Printf("Error: %v, %s", err, op)
 			c.JSON(http.StatusInternalServerError, erresponse.ErrorResponse{
 				Status:  http.StatusInternalServerError,
 				Error:   "Unable to open the file",
@@ -145,12 +152,12 @@ func (h *Handler) CreateMany(c *gin.Context) {
 			})
 			return
 		}
-		defer f.Close()
 
 		// Читаем содержимое файла в байтовый срез
 		fileBytes, err := io.ReadAll(f)
+		f.Close() // Закрываем файл сразу после чтения
 		if err != nil {
-			log.Printf("Error: %v,  %s", err, op)
+			log.Printf("Error: %v, %s", err, op)
 			c.JSON(http.StatusInternalServerError, erresponse.ErrorResponse{
 				Status:  http.StatusInternalServerError,
 				Error:   "Unable to read the file",
@@ -159,9 +166,14 @@ func (h *Handler) CreateMany(c *gin.Context) {
 			return
 		}
 
-		fileFormat := http.DetectContentType(fileBytes)
+		// Если для файла передан MIME тип - используем его. Иначе определяем автоматически.
+		var fileFormat string
+		if i < len(mimeTypes) && mimeTypes[i] != "" {
+			fileFormat = mimeTypes[i]
+		} else {
+			fileFormat = http.DetectContentType(fileBytes)
+		}
 
-		// Добавляем данные файла в map
 		now := time.Now().UTC()
 		data[file.Filename] = domain.FileContent{
 			Name:      file.Filename,
@@ -176,7 +188,7 @@ func (h *Handler) CreateMany(c *gin.Context) {
 	// Сохраняем файлы в MinIO с помощью метода CreateMany
 	fileRespes, err := h.minioService.CreateMany(c, data, userID)
 	if err != nil {
-		log.Printf("Error: %v,  %s", err, op)
+		log.Printf("Error: %v, %s", err, op)
 		c.JSON(http.StatusInternalServerError, erresponse.ErrorResponse{
 			Status:  http.StatusInternalServerError,
 			Error:   "Unable to save the files",
@@ -186,11 +198,12 @@ func (h *Handler) CreateMany(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{
-		"status":  http.StatusOK,
-		"message": "Files uploaded successfully",
-		"file_data":    fileRespes,
+		"status":    http.StatusOK,
+		"message":   "Files uploaded successfully",
+		"file_data": fileRespes,
 	})
 }
+
 
 // GetOne обработчик для получения одного объекта из бакета Minio по его идентификатору.
 func (h *Handler) GetOne(c *gin.Context) {

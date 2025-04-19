@@ -9,8 +9,8 @@ import (
 	"github.com/1abobik1/Cloud-Storage/file_upload_service/internal/handler"
 	"github.com/1abobik1/Cloud-Storage/file_upload_service/internal/middleware"
 	"github.com/1abobik1/Cloud-Storage/file_upload_service/internal/minio"
-	"github.com/gin-gonic/gin"
 	"github.com/gin-contrib/cors"
+	"github.com/gin-gonic/gin"
 	"github.com/redis/go-redis/v9"
 )
 
@@ -39,7 +39,6 @@ func main() {
 
 	// Инициализация маршрутизатора Gin
 	r := gin.Default()
-	r.Use(middleware.JWTMiddleware(cfg.JWTPublicKeyPath))
 	// cors conf
 	r.Use(cors.New(cors.Config{
 		AllowOrigins:     []string{"http://localhost:3000"},
@@ -49,6 +48,8 @@ func main() {
 		AllowCredentials: true,
 		MaxAge:           12 * time.Hour,
 	}))
+
+	r.Use(middleware.JWTMiddleware(cfg.JWTPublicKeyPath))
 
 	s.RegisterRoutes(r)
 
