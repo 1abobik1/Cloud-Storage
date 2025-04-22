@@ -1,3 +1,2 @@
-export const AUTH_API_URL = 'http://localhost:8080/'
-export const CLOUDAPI_URL = 'http://localhost:8081/'
-
+export const AUTH_API_URL = '/auth_api'
+ export const CLOUDAPI_URL = '/file_api'
