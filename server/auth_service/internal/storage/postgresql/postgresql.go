@@ -8,6 +8,7 @@ import (
 
 	"github.com/1abobik1/Cloud-Storage/auth-service/internal/domain/models"
 	"github.com/1abobik1/Cloud-Storage/auth-service/internal/storage"
+	_ "github.com/lib/pq"
 )
 
 type PostgesStorage struct {
