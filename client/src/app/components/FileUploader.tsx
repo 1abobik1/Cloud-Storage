@@ -27,7 +27,7 @@ const FileUploader = () => {
             setToastMessage(null);
             setToastType(null);
 
-            const response = await CloudService.createClouds(formData);
+            const response = await CloudService.uploadFiles(formData);
 
             if (response.status !== 200) {
                 throw new Error('Ошибка при загрузке файла');
