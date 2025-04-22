@@ -95,7 +95,7 @@ export default class Store {
         this.setLoading(true);
         try {
             const response = await axios.post<AuthResponse>(
-                `${AUTH_API_URL}/token/update/`,
+                `${AUTH_API_URL}/token/update`,
                 {},
                 {
                     withCredentials: true
