@@ -35,9 +35,9 @@ export default class CloudService {
     }
 
 
-    static async uploadFiles(formData: FormData) {
+    static async uploadFiles(formData: FormData, config = {}) {
         const encryptedFormData = new FormData();
-
+    
         for (const [key, value] of formData.entries()) {
             if (value instanceof File) {
                 const encryptedFile = await cryptoHelper.encryptFile(value);
@@ -46,13 +46,15 @@ export default class CloudService {
                 encryptedFormData.append(key, value);
             }
         }
-
+    
         return await cloudApi.post(`/files/many`, encryptedFormData, {
             headers: {
                 'Content-Type': 'multipart/form-data',
             },
+            ...config, // <- прокидываем onUploadProgress и другие настройки
         });
     }
+    
 
     static async deleteFile(type: string, obj_id: string) {
         return await cloudApi.delete(`files/one?id=${obj_id}&type=${type}`);
