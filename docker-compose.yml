@@ -66,6 +66,8 @@ services:
       retries: 5
 
 
+
+
   redis:
     container_name: redis
     image: redis:latest
@@ -74,6 +76,22 @@ services:
     networks:
       - app-network
  
+
+  frontend:
+     build:
+       context: ./client  # Путь к папке с Dockerfile
+     container_name: frontend_container
+     ports:
+       - "3000:3000"
+     depends_on:
+       - auth-service  # Зависит от auth-service
+       - file-upload-service  # Зависит от file-upload-service
+     networks:
+       - app-network 
+     environment:
+       - NEXT_PUBLIC_API_URL=http://auth-service:8000  # API для аутентификации
+       - NEXT_PUBLIC_FILE_API_URL=http://file-upload-service:8001  # API для загрузки файлов
+    
   
   
 
