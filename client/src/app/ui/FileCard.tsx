@@ -70,7 +70,8 @@ const handleCloseModal = () => {
 
       <div className="flex justify-between items-center">
 
-        <div><TypeFileIcon type={type}/> <Link href={url} target="_blank" rel="noopener noreferrer" >{name}</Link> </div>
+        <div className="ml-2 w-[320px] min-w-0 break-words"><TypeFileIcon type={type}/> <Link href={url} target="_blank" rel="noopener noreferrer" >{name}</Link> </div>
+
         <div className="w-60% flex items-center">
   <div className="mr-5 hidden sm:block">{formatDate(created_at)}</div> {/* Скрывается на мобильных */}
   <div>
@@ -101,6 +102,8 @@ const handleCloseModal = () => {
       )}
     </div>
   );
+
+  
 };
 
 export default FileCard;
