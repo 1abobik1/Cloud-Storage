@@ -3,7 +3,7 @@ import React from 'react';
 export default function SalesPage() {
   return (
     <div className="max-w-3xl mx-auto p-6 space-y-6">
-      <h1 className="text-3xl font-bold">Облачное хранилище от Mannco</h1>
+      <h1 className="text-3xl font-bold">Облачное хранилище от BerLove</h1>
 
       <section>
         <h2 className="text-xl font-semibold">📦 Условия покупки</h2>
@@ -22,7 +22,6 @@ export default function SalesPage() {
           <li>10 ГБ — 300₽ / месяц</li>
           <li>50 ГБ — 1000₽ / месяц</li>
           <li>100 ГБ — 1800₽ / месяц</li>
-          <li>Безлимит — 2500₽ / месяц</li>
         </ul>
       </section>
 
@@ -32,7 +31,7 @@ export default function SalesPage() {
           Перевод на криптокошелёк:
         </p>
         <div className="mt-1 p-3 bg-gray-100 rounded font-mono break-all">
-          TON: `EQCXXXXXXXXXXXXXXXXXXXXXXXXXXXX`
+          TON: `UQBD6AuLuV7FOXcTQBmzLwMesIBHBbN7WOWeDZvUfIhGvOP2`
         </div>
         <p className="text-sm text-gray-500 mt-1">* Укажите выбранный тариф в комментарии к переводу.</p>
       </section>

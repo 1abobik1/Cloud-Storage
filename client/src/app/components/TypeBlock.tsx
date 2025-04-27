@@ -4,6 +4,7 @@ import {FileData} from "@/app/api/models/FileData";
 import CloudService from "../api/services/CloudServices";
 import FileCard from "@/app/ui/FileCard";
 import TypeFileIcon from "../ui/TypeFileIcon";
+import FileUploader from "./FileUploader";
 
 export default function TypeBlock({ type }) {
   const [file, setFile] = useState<FileData[]>([]);
@@ -79,57 +80,64 @@ export default function TypeBlock({ type }) {
   };
 
   return (
-    <div className="p-4 mx-auto bg-white rounded shadow w-100vw">
-      <h2 className="text-xl font-bold mb-4"><TypeFileIcon type={type}/></h2>
-      <div className="flex flex-row justify-between">
-
-
-      <div className="mb-4">
-  <button
-    onClick={handleNameSortChange}
-    className="bg-blue-500 hover:bg-blue-600 text-white py-2 px-4 rounded flex items-center"
-  >
-    Названию&nbsp;
-    {nameSortAsc ? (
-      <span className="ml-1">▲</span>
-    ) : (
-      <span className="ml-1">▼</span>
-    )}
-  </button>
-</div>
-
-
-      <div className="mb-4 mr-28">
-  <button
-    onClick={() => {
-      handleSortChange(timeSort ? 'desc' : 'asc');
-      setTimeSort(!timeSort);
-    }}
-    className="bg-blue-500 hover:bg-blue-600 text-white py-2 px-4 rounded flex items-center"
-  >
-    Дате&nbsp;
-    {timeSort ? (
-      <span className="ml-2">▲</span> // стрелка вверх (по возрастанию)
-    ) : (
-      <span className="ml-2">▼</span> // стрелка вниз (по убыванию)
-    )}
-  </button>
-
-</div>
-
-</div>
-      {/* Отображаем отсортированные файлы */}
-      {filteredFiles.map((item) => (
-        <FileCard
-          key={item.obj_id}
-          obj_id={item.obj_id}
-          name={item.name}
-          url={item.url}
-          created_at={item.created_at}
-          type={type}
-          onDelete={handleDelete}
-        />
-      ))}
-    </div>
+    <>
+      {filteredFiles.length === 0 ? (
+        <div className="p-10 text-center text-gray-600">
+          <div className="text-5xl mb-4">📂</div>
+          <p className="text-lg">Нет файлов. Пожалуйста, загрузите файл.</p>
+          <div className="p-4">
+            <FileUploader/>
+          </div>
+         
+        </div>
+      ) : (
+        <div className="p-4 mx-auto bg-white rounded shadow w-100vw">
+          <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
+            <TypeFileIcon type={type}/> 
+          </h2>
+  
+          <div className="flex flex-row justify-between">
+            <div className="mb-4">
+              <button
+                onClick={handleNameSortChange}
+                className="bg-blue-500 hover:bg-blue-600 text-white py-2 px-4 rounded flex items-center"
+              >
+                Названию&nbsp;
+                {nameSortAsc ? <span className="ml-1">▲</span> : <span className="ml-1">▼</span>}
+              </button>
+            </div>
+  
+            <div className="mb-4 mr-28">
+              <button
+                onClick={() => {
+                  handleSortChange(timeSort ? 'desc' : 'asc');
+                  setTimeSort(!timeSort);
+                }}
+                className="bg-blue-500 hover:bg-blue-600 text-white py-2 px-4 rounded flex items-center"
+              >
+                Дате&nbsp;
+                {timeSort ? <span className="ml-2">▲</span> : <span className="ml-2">▼</span>}
+              </button>
+            </div>
+          </div>
+  
+          {filteredFiles.map((item) => (
+            <FileCard
+              key={item.obj_id}
+              obj_id={item.obj_id}
+              name={item.name}
+              url={item.url}
+              created_at={item.created_at}
+              type={type}
+              onDelete={handleDelete}
+            />
+          ))}
+        </div>
+      )}
+    </>
   );
+  
+  
+
+
 };
