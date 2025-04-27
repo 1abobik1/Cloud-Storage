@@ -36,10 +36,11 @@ openssl rsa -pubout -in private_key.pem -out public_key.pem
 ### Для auth_service нужно создать файл .env такого вида
 ```ini
 POSTGRES_USER=postgres
-POSTGRES_PASSWORD=YOURPASSWORD
+POSTGRES_PASSWORD=dima15042004
 POSTGRES_DB=auth-service
-STORAGE_PATH=postgres://postgres:YOURPASSWORD@db:5432/auth-service?sslmode=disable
+STORAGE_PATH=postgres://postgres:dima15042004@auth_db:5432/auth-service?sslmode=disable
 HTTP_SERVER_ADDRESS=0.0.0.0:8080
+QUOTA_SERVICE_URL=http://file-upload-service:8081
 ACCESS_TOKEN_TTL=15m
 REFRESH_TOKEN_TTL=720h
 PUBLIC_KEY_PATH=public_key.pem
@@ -57,6 +58,10 @@ MINIO_USE_SSL=false
 MINIO_URL_LIFETIME=8h
 REDIS_URL_LIFETIME=8h
 REDIS_PORT=redis:6379
+POSTGRES_USER=postgres
+POSTGRES_PASSWORD=dima15042004
+POSTGRES_DB=file_upload_service
+STORAGE_PATH=postgres://postgres:dima15042004@file_upload_db:5432/file_upload_service?sslmode=disable
 ```
 
 ---
@@ -71,7 +76,7 @@ docker-compose up
 Сервисы будут запущены со следующими адресами:
 - **auth_service:** http://localhost:8080
 - **file_upload_service:** http://localhost:8081
-- **PostgreSQL:** порт 5433 (на хосте)
+- **PostgreSQL:** порт 5433-auth_db и 5434-file_upload_db(на хосте)
 - **MinIO:** API – http://localhost:9000, консоль – http://localhost:9001
 - **Redis:** порт 6379
 

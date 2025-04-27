@@ -20,6 +20,7 @@ type Config struct {
 	MinIoURLLifeTime  time.Duration `env:"MINIO_URL_LIFETIME" env-required:"true"`
 	RedisURLLifeTime  time.Duration `env:"REDIS_URL_LIFETIME" env-required:"true"`
 	RedisPort         string        `env:"REDIS_PORT" env-required:"true"`
+	StoragePath       string        `env:"STORAGE_PATH" env-required:"true"`
 }
 
 func MustLoad() *Config {

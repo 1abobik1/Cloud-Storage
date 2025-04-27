@@ -1,17 +1,17 @@
-
+version: "3.8"
 
 services:
-  
-  db:
+
+  auth_db:
     container_name: auth_db
     image: postgres:14-alpine
     env_file:
-      - ./server/auth_service/.env
+      - ./server/auth_service/.env      
     volumes:
-      - db_data:/var/lib/postgresql/data
-      - ./server/docker-entrypoint-initdb.d:/docker-entrypoint-initdb.d
+      - auth_db_data:/var/lib/postgresql/data
+      - ./server/auth_service/docker-entrypoint-initdb.d:/docker-entrypoint-initdb.d
     ports:
-      - 5433:5432
+      - "5433:5432"
     networks:
       - app-network
 
@@ -20,12 +20,25 @@ services:
     build:
       context: ./server/auth_service
       dockerfile: Dockerfile
-    environment:
-      CONFIG_PATH: .env
+    env_file:
+      - ./server/auth_service/.env
     depends_on:
-      - db
+      - auth_db
     ports:
-      - 8080:8080
+      - "8080:8080"
+    networks:
+      - app-network
+
+  file_upload_db:
+    container_name: file_upload_db
+    image: postgres:14-alpine
+    env_file:
+      - ./server/file_upload_service/.env  
+    volumes:
+      - file_upload_db_data:/var/lib/postgresql/data
+      - ./server/file_upload_service/docker-entrypoint-initdb.d:/docker-entrypoint-initdb.d
+    ports:
+      - "5434:5432"
     networks:
       - app-network
 
@@ -34,15 +47,19 @@ services:
     build:
       context: ./server/file_upload_service
       dockerfile: Dockerfile
+    env_file:
+      - ./server/file_upload_service/.env
     extra_hosts:
       - "localhost:host-gateway"
-    ports:
-      - 8081:8081
     depends_on:
       minio:
         condition: service_healthy
       redis:
         condition: service_started
+      file_upload_db:
+        condition: service_started
+    ports:
+      - "8081:8081"
     networks:
       - app-network
 
@@ -65,41 +82,32 @@ services:
       timeout: 3s
       retries: 5
 
-
-
-
   redis:
     container_name: redis
     image: redis:latest
     ports:
-      - 6379:6379
+      - "6379:6379"
     networks:
       - app-network
- 
 
-
-  frontend:
-     build:
-       context: ./client  # Путь к папке с Dockerfile
-     container_name: frontend_container
-     ports:
-       - "3000:3000"
-     depends_on:
-       - auth-service  # Зависит от auth-service
-       - file-upload-service  # Зависит от file-upload-service
-     networks:
-       - app-network 
-     environment:
-       - NEXT_PUBLIC_API_URL=http://auth-service:8000  # API для аутентификации
-       - NEXT_PUBLIC_FILE_API_URL=http://file-upload-service:8001  # API для загрузки файлов
-    
-  
-  
-
-
+  # frontend:
+  #   container_name: frontend_container
+  #   build:
+  #     context: ./client
+  #   environment:
+  #     - NEXT_PUBLIC_API_URL=http://auth-service:8080
+  #     - NEXT_PUBLIC_FILE_API_URL=http://file-upload-service:8081
+  #   depends_on:
+  #     - auth-service
+  #     - file-upload-service
+  #   ports:
+  #     - "3000:3000"
+  #   networks:
+  #     - app-network
 
 volumes:
-  db_data:
+  auth_db_data:
+  file_upload_db_data:
   minio_data:
 
 networks:

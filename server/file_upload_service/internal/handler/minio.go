@@ -1,4 +1,4 @@
-package minioHandler
+package handler
 
 import (
 	"errors"
@@ -10,7 +10,9 @@ import (
 	"github.com/1abobik1/Cloud-Storage/file_upload_service/internal/domain"
 	"github.com/1abobik1/Cloud-Storage/file_upload_service/internal/dto"
 	erresponse "github.com/1abobik1/Cloud-Storage/file_upload_service/internal/handler/errors_response"
-	"github.com/1abobik1/Cloud-Storage/file_upload_service/internal/minio"
+	"github.com/1abobik1/Cloud-Storage/file_upload_service/internal/middleware"
+	"github.com/1abobik1/Cloud-Storage/file_upload_service/internal/services/minio"
+	"github.com/1abobik1/Cloud-Storage/file_upload_service/internal/services/quota"
 	"github.com/1abobik1/Cloud-Storage/file_upload_service/pkg"
 	"github.com/gin-gonic/gin"
 
@@ -40,6 +42,16 @@ func (h *Handler) CreateOne(c *gin.Context) {
 		return
 	}
 
+	size := file.Size
+	if err := h.quotaService.CheckQuota(c, userID, size); err != nil {
+		if errors.Is(err, quota.ErrQuotaExceeded) {
+			c.JSON(http.StatusForbidden, gin.H{"error": "quota exceeded"})
+			return
+		}
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "quota check failed"})
+		return
+	}
+
 	f, err := file.Open()
 	if err != nil {
 		log.Printf("Error: %v, %s", err, op)
@@ -55,12 +67,21 @@ func (h *Handler) CreateOne(c *gin.Context) {
 	// Читаем содержимое файла в байтовый срез
 	fileBytes, err := io.ReadAll(f)
 	if err != nil {
-		log.Printf("Error: %v, %s", err, op)
-		c.JSON(http.StatusInternalServerError, erresponse.ErrorResponse{
-			Status:  http.StatusInternalServerError,
-			Error:   "Unable to read the file",
-			Details: err,
-		})
+		if errors.Is(err, middleware.ErrFileTooLarge) {
+
+			c.JSON(http.StatusRequestEntityTooLarge, gin.H{
+				"error": fmt.Sprintf("file is too large: limit is %d bytes", middleware.MaxFileSize),
+			})
+
+		} else {
+			log.Printf("Error: %v, %s", err, op)
+
+			c.JSON(http.StatusInternalServerError, erresponse.ErrorResponse{
+				Status:  http.StatusInternalServerError,
+				Error:   "Unable to read the file",
+				Details: err,
+			})
+		}
 		return
 	}
 
@@ -89,6 +110,17 @@ func (h *Handler) CreateOne(c *gin.Context) {
 			Error:   "Unable to save the file",
 			Details: err,
 		})
+		return
+	}
+
+	if err := h.quotaService.AddUsage(c, userID, size); err != nil {
+		if errors.Is(err, quota.ErrNoActivePlan) {
+			log.Printf("[%s] AddUsage: %v", op, err)
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "no active plan for user"})
+			return
+		}
+		log.Printf("[%s] AddUsage: %v", op, err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
@@ -134,10 +166,23 @@ func (h *Handler) CreateMany(c *gin.Context) {
 		return
 	}
 
+	var totalSize int64
+	for _, fh := range files {
+		totalSize += fh.Size
+	}
+
+	if err := h.quotaService.CheckQuota(c.Request.Context(), userID, totalSize); err != nil {
+		if errors.Is(err, quota.ErrQuotaExceeded) {
+			c.JSON(http.StatusForbidden, gin.H{"error": "quota exceeded"})
+		} else {
+			log.Printf("[%s] CheckQuota: %v", op, err)
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "quota check failed"})
+		}
+		return
+	}
+
 	// Получаем массив mime_type, если передан
 	mimeTypes := c.PostFormArray("mime_type")
-
-	// Создаем map для хранения данных файлов
 	data := make(map[string]domain.FileContent)
 
 	// Проходим по каждому файлу в форме
@@ -155,14 +200,20 @@ func (h *Handler) CreateMany(c *gin.Context) {
 
 		// Читаем содержимое файла в байтовый срез
 		fileBytes, err := io.ReadAll(f)
-		f.Close() // Закрываем файл сразу после чтения
 		if err != nil {
-			log.Printf("Error: %v, %s", err, op)
-			c.JSON(http.StatusInternalServerError, erresponse.ErrorResponse{
-				Status:  http.StatusInternalServerError,
-				Error:   "Unable to read the file",
-				Details: err,
-			})
+			if errors.Is(err, middleware.ErrFileTooLarge) {
+				c.JSON(http.StatusRequestEntityTooLarge, gin.H{
+					"error": fmt.Sprintf("file %q is too large: limit is %d bytes", file.Filename, middleware.MaxFileSize),
+				})
+			} else {
+				log.Printf("Error: %v, %s", err, op)
+				c.JSON(http.StatusInternalServerError, erresponse.ErrorResponse{
+					Status:  http.StatusInternalServerError,
+					Error:   "Unable to read the file",
+					Details: err,
+				})
+			}
+			f.Close()
 			return
 		}
 
@@ -197,13 +248,18 @@ func (h *Handler) CreateMany(c *gin.Context) {
 		return
 	}
 
+	if err := h.quotaService.AddUsage(c, userID, totalSize); err != nil {
+		log.Printf("[%s] AddUsage: %v", op, err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
 	c.JSON(http.StatusOK, gin.H{
 		"status":    http.StatusOK,
 		"message":   "Files uploaded successfully",
 		"file_data": fileRespes,
 	})
 }
-
 
 // GetOne обработчик для получения одного объекта из бакета Minio по его идентификатору.
 func (h *Handler) GetOne(c *gin.Context) {
@@ -255,9 +311,9 @@ func (h *Handler) GetOne(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{
-		"status":  http.StatusOK,
-		"message": "File received successfully",
-		"file_data":    fileResp,
+		"status":    http.StatusOK,
+		"message":   "File received successfully",
+		"file_data": fileResp,
 	})
 }
 
@@ -322,9 +378,9 @@ func (h *Handler) GetMany(c *gin.Context) {
 
 	// Возвращаем успешный ответ с URL-адресами полученных файлов
 	c.JSON(http.StatusOK, gin.H{
-		"status":  http.StatusOK,
-		"message": "Files received successfully",
-		"file_data":    fileResp,
+		"status":    http.StatusOK,
+		"message":   "Files received successfully",
+		"file_data": fileResp,
 	})
 }
 
@@ -382,9 +438,9 @@ func (h *Handler) GetAll(c *gin.Context) {
 
 	// Возвращаем успешный ответ с URL-адресами полученных файлов
 	c.JSON(http.StatusOK, gin.H{
-		"status":  http.StatusOK,
-		"message": "All Files received successfully",
-		"file_data":    fileResp,
+		"status":    http.StatusOK,
+		"message":   "All Files received successfully",
+		"file_data": fileResp,
 	})
 }
 
