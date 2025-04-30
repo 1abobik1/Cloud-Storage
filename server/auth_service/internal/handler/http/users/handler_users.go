@@ -7,7 +7,7 @@ import (
 const ErrValidationEmailOrPassword = "invalid email format or password must be at least 6 characters long"
 
 type UserServiceI interface {
-	Register(ctx context.Context, email, password, platform string) (accessJWT string, refreshJWT string, er error)
+	Register(ctx context.Context, email, password, userKey, platform string) (accessJWT string, refreshJWT string, er error)
 	Login(ctx context.Context, email, password, platform string) (accessJWT string, refreshJWT string, er error)
 	RevokeRefreshToken(ctx context.Context, refreshToken string) error
 }

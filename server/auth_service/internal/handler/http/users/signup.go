@@ -15,7 +15,7 @@ import (
 func (h *userHandler) SignUp(c *gin.Context) {
 	const op = "handler.http.users.SignUp"
 
-	var authDTO dto.AuthDTO
+	var authDTO dto.SignUpDTO
 
 	if err := c.BindJSON(&authDTO); err != nil {
 		log.Printf("Error binding JSON: %v location %s\n", err, op)
@@ -36,7 +36,7 @@ func (h *userHandler) SignUp(c *gin.Context) {
 		return
 	}
 
-	accessToken, refreshToken, err := h.userService.Register(c, authDTO.Email, authDTO.Password, authDTO.Platform)
+	accessToken, refreshToken, err := h.userService.Register(c, authDTO.Email, authDTO.Password, authDTO.UserKey, authDTO.Platform)
 	if err != nil {
 		if errors.Is(err, storage.ErrUserExists) {
 			c.JSON(http.StatusConflict, gin.H{"error": "User with this email already exists"})

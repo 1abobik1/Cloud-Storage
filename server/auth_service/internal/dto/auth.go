@@ -1,6 +1,13 @@
 package dto
 
-type AuthDTO struct {
+type SignUpDTO struct {
+	Email    string `json:"email" validate:"required,email"`
+	Password string `json:"password" validate:"required,min=6"`
+	UserKey  string `json:"user_key" validate:"required"`
+	Platform string `json:"platform" validate:"required"`
+}
+
+type LogInDTO struct {
 	Email    string `json:"email" validate:"required,email"`
 	Password string `json:"password" validate:"required,min=6"`
 	Platform string `json:"platform" validate:"required"`

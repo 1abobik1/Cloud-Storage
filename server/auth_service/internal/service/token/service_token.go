@@ -1,10 +1,15 @@
 package serviceToken
 
-import "github.com/1abobik1/Cloud-Storage/auth-service/config"
+import (
+	"context"
+
+	"github.com/1abobik1/Cloud-Storage/auth-service/config"
+)
 
 type TokenStorageI interface {
 	CheckRefreshToken(refreshToken string) (int, error)
 	UpdateRefreshToken(oldRefreshToken, newRefreshToken string) error
+	GetUserKey(ctx context.Context, userID int) (string, error)
 }
 
 type tokenService struct {

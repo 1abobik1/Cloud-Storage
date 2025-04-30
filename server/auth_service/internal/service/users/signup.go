@@ -13,7 +13,7 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
-func (s *userService) Register(ctx context.Context, email, password, platform string) (accessJWT string, refreshJWT string, er error) {
+func (s *userService) Register(ctx context.Context, email, password, userKey, platform string) (accessJWT string, refreshJWT string, er error) {
 	const op = "service.users.Register"
 
 	passHash, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
@@ -33,13 +33,18 @@ func (s *userService) Register(ctx context.Context, email, password, platform st
 		return "", "", err
 	}
 
-	accessToken, err := utils.CreateAccessToken(userID, s.cfg.AccessTokenTTL, s.cfg.PrivateKeyPath)
+	if err := s.userStorage.SaveUserKey(ctx, userID, userKey); err != nil {
+		log.Printf("Error failed to save user key: %v \n", err)
+		return "", "", fmt.Errorf("error failed to save user key")
+	}
+
+	accessToken, err := utils.CreateAccessToken(userKey, userID, s.cfg.AccessTokenTTL, s.cfg.PrivateKeyPath)
 	if err != nil {
 		log.Printf("Error creating access token: %v \n", err)
 		return "", "", fmt.Errorf("error creating access token: %w", err)
 	}
 
-	refreshToken, err := utils.CreateRefreshToken(userID, s.cfg.RefreshTokenTTL, s.cfg.PrivateKeyPath)
+	refreshToken, err := utils.CreateRefreshToken(userKey, userID, s.cfg.RefreshTokenTTL, s.cfg.PrivateKeyPath)
 	if err != nil {
 		log.Printf("Error creating refresh token: %v \n", err)
 		return "", "", fmt.Errorf("error creating refresh token: %w", err)
