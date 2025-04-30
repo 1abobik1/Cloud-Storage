@@ -6,7 +6,6 @@ import { usePathname } from 'next/navigation';
 import TypeFileIcon from './TypeFileIcon';
 
 const links = [
-  {name: 'Home', href: '/cloud/home', icontype: 'home'  },
   {name: 'Videos',href: '/cloud/videos',icontype: 'video' ,},
   {name: 'Photos',href: '/cloud/photos',icontype: 'photo' ,},
   {name: 'Docs',href: '/cloud/docs',icontype: 'text' ,},
@@ -34,8 +33,11 @@ export default function NavLinks() {
             }
           )}
         >
-          <TypeFileIcon type={link.icontype} size={20} />
-          <p className="text-left min-w-[80px] truncate">{link.name}</p>
+         <div className="ml-2  flex items-center">
+  <TypeFileIcon type={link.icontype} size={20} />
+  <p className="text-left min-w-[80px] truncate ml-2">{link.name}</p>
+</div>
+
         </Link>
           
         );

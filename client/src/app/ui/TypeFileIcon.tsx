@@ -3,12 +3,12 @@ import {
   FilePdfTwoTone,
   FileImageTwoTone,
   FileUnknownTwoTone,
-  HomeOutlined
+  PlayCircleTwoTone
 } from '@ant-design/icons';
 
-import VlcIcon from './VlcIcon';
 
-type TypeFileIcon = 'text' | 'photo' | 'video' |'unknown' | 'home';
+
+type TypeFileIcon = 'text' | 'photo' | 'video' |'unknown'  ;
 
 interface FileIconProps {
   type: string;
@@ -22,10 +22,10 @@ interface FileIconProps {
 
 const TypeFileIcon: React.FC<FileIconProps> = ({ type, size = 24 }) => {
   const iconMap: Record<TypeFileIcon, React.ReactNode> = {
-    home: <HomeOutlined style={{ color: '#1890ff' }}/>,
+
     text: <FilePdfTwoTone color="###1890ff" />,
     photo: <FileImageTwoTone color="##1890ff" />,
-    video:  <VlcIcon size={size} />,
+    video:  <PlayCircleTwoTone color="##1890ff" />,
     unknown: <FileUnknownTwoTone color="##1890ff" />,
   };
 

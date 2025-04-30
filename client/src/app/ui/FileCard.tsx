@@ -3,8 +3,7 @@ import CloudService from '../api/services/CloudServices';
 
 import {ArrowDownTrayIcon, TrashIcon} from '@heroicons/react/24/outline';
 import ModalDelete from './ModalDelete';
-import {cryptoHelper} from "@/app/api/utils/CryptoHelper";
-import {getMimeTypeFromName} from "@/app/api/utils/getMimeTypeFromName";
+
 import TypeFileIcon from './TypeFileIcon';
 import Link from 'next/link';
 
@@ -29,17 +28,8 @@ const FileCard: React.FC<FileCardData> = ({ obj_id, created_at, name, url, type,
         throw new Error('Ошибка при скачивании файла');
       }
 
-      const encryptedBlob = await response.blob();
-      const mimeType = getMimeTypeFromName(name); // получаем тип по имени файла
-      const encryptedFile = new File([encryptedBlob], name, { type: mimeType });
-
-      const decryptedBlob = await cryptoHelper.decryptFile(encryptedFile);
-
-      const link = document.createElement('a');
-      link.href = URL.createObjectURL(new Blob([decryptedBlob], { type: mimeType }));
-      link.download = name;
-      link.click();
-      URL.revokeObjectURL(link.href);
+     
+      
     } catch (error) {
       console.error('Ошибка при скачивании или расшифровке файла:', error);
     }
@@ -80,7 +70,8 @@ const handleCloseModal = () => {
 
       <div className="flex justify-between items-center">
 
-        <div><TypeFileIcon type={type}/> <Link href={url} target="_blank" rel="noopener noreferrer" >{name}</Link> </div>
+        <div className="ml-2 w-[320px] min-w-0 break-words"><TypeFileIcon type={type}/> <Link href={url} target="_blank" rel="noopener noreferrer" >{name}</Link> </div>
+
         <div className="w-60% flex items-center">
   <div className="mr-5 hidden sm:block">{formatDate(created_at)}</div> {/* Скрывается на мобильных */}
   <div>
@@ -111,6 +102,8 @@ const handleCloseModal = () => {
       )}
     </div>
   );
+
+  
 };
 
 export default FileCard;
