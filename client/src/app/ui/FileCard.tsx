@@ -6,8 +6,7 @@ import ModalDelete from './ModalDelete';
 
 import TypeFileIcon from './TypeFileIcon';
 import Link from 'next/link';
-
-
+import {cryptoHelper} from "@/app/api/utils/CryptoHelper";
 
 
 export type FileCardData = {
@@ -27,9 +26,20 @@ const FileCard: React.FC<FileCardData> = ({ obj_id, created_at, name, url, type,
       if (!response.ok) {
         throw new Error('Ошибка при скачивании файла');
       }
+      const blob = await response.blob();
+      const encryptedFile = new File([blob], name, { type });
+      const decryptedBlob = await cryptoHelper.decryptFile(encryptedFile);
 
-     
-      
+      const downloadUrl = URL.createObjectURL(decryptedBlob);
+      const a = document.createElement('a');
+      a.href = downloadUrl;
+      a.download = name;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(downloadUrl);
+
+
     } catch (error) {
       console.error('Ошибка при скачивании или расшифровке файла:', error);
     }
@@ -103,7 +113,7 @@ const handleCloseModal = () => {
     </div>
   );
 
-  
+
 };
 
 export default FileCard;

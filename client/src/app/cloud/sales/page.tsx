@@ -3,7 +3,7 @@ import React from 'react';
 export default function SalesPage() {
   return (
     <div className="max-w-3xl mx-auto p-6 space-y-6">
-      <h1 className="text-3xl font-bold">Облачное хранилище от BerLove</h1>
+      <h1 className="text-3xl font-bold">Облачное хранилище от BeerLoveTeam</h1>
 
       <section>
         <h2 className="text-xl font-semibold">📦 Условия покупки</h2>

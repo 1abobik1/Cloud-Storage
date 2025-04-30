@@ -28,6 +28,7 @@
     "mobx": "^6.13.6",
     "mobx-react-lite": "^4.1.0",
     "next": "^15.1.6",
+    "paillier-bigint": "^3.4.3",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
     "react-ellipsis-text": "^1.2.1",
