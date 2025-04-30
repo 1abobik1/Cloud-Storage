@@ -5,6 +5,7 @@ import CloudService from "../api/services/CloudServices";
 import FileCard from "@/app/ui/FileCard";
 import TypeFileIcon from "../ui/TypeFileIcon";
 import FileUploader from "./FileUploader";
+import { Loader2 } from 'lucide-react'; 
 
 export default function TypeBlock({ type }) {
   const [file, setFile] = useState<FileData[]>([]);
@@ -14,6 +15,7 @@ export default function TypeBlock({ type }) {
   const [nameSortAsc, setNameSortAsc] = useState<boolean>(true);
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc'); // сортировка по возрастанию или убыванию
   const [filteredFiles, setFilteredFiles] = useState<FileData[]>([]);
+  
 
   useEffect(() => {
     const fetchData = async () => {
@@ -29,7 +31,8 @@ export default function TypeBlock({ type }) {
             created_at: String(file.created_at),
           }));
           setFile(files);
-          setFilteredFiles(files); // Изначально отображаем все файлы
+          setFilteredFiles(files);
+          
         } else {
           setFile([]);
         }
@@ -72,7 +75,13 @@ export default function TypeBlock({ type }) {
 
 
 
-  if (isLoading) return <p>Загрузка...</p>;
+  if (isLoading) return(<div className=" inset-0 bg-white/70 backdrop-blur-sm z-10 flex items-center justify-center">
+  <div className="flex flex-col items-center">
+    <Loader2 className="w-10 h-10 text-blue-500 animate-spin mb-2" />
+    <span className="text-gray-700 text-sm">Загрузка файлов...</span>
+  </div>
+</div>)
+
   if (isError) return <p>Произошла ошибка при загрузке данных.</p>;
 
   const handleDelete = (id: string) => {
@@ -81,6 +90,9 @@ export default function TypeBlock({ type }) {
 
   return (
     <>
+
+  
+
       {filteredFiles.length === 0 ? (
         <div className="p-10 text-center text-gray-600">
           <div className="text-5xl mb-4">📂</div>
@@ -91,7 +103,7 @@ export default function TypeBlock({ type }) {
 
         </div>
       ) : (
-        <div className="p-4 mx-auto bg-white rounded shadow w-100vw">
+        <div className="sm:p-6 p-2 mx-auto bg-white rounded shadow ">
           <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
             <TypeFileIcon type={type}/>
           </h2>
