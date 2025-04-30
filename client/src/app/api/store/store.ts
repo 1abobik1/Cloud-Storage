@@ -20,16 +20,6 @@ export default class Store {
         this.isAuth = bool;
     }
 
-
-
-    setCode(code: number) {
-        this.code = code;
-    }
-    getCode() {
-        return this.code;
-    }
-
-
     setLoading(bool: boolean) {
         this.isLoading = bool;
     }
@@ -41,22 +31,9 @@ export default class Store {
             this.setAuth(true);
 
         } catch (e) {
-            // @ts-ignore
             console.log(e.response?.data);
         }
     }
-
-    // async verify(email: string) {
-    //     try {
-    //         const response = await AuthService.verify(email);
-    //         console.log(response)
-    //         this.setCode(response.data.code);
-    //         return Promise.resolve();
-    //     } catch (e) {
-    //         // @ts-ignore
-    //         return Promise.reject(e);
-    //     }
-    // }
 
     async signup(username: string, email: string, password: string) {
         try {
@@ -65,7 +42,6 @@ export default class Store {
             this.setAuth(true);
 
         } catch (e) {
-            // @ts-ignore
             console.log(e.response?.data?.message);
 
         if (e.response?.status === 409) {
@@ -86,7 +62,7 @@ export default class Store {
             localStorage.removeItem('token');
             this.setAuth(false);
 
-        } catch (e: any) {
+        } catch (e) {
             console.log(e.response?.data?.message);
         }
     }
@@ -105,7 +81,7 @@ export default class Store {
             this.setAuth(true);
             return Promise.resolve();
 
-        } catch (e: any) {
+        } catch (e) {
             if (e.response?.status === 401) {
                 this.setAuth(false);
                 localStorage.removeItem('token');

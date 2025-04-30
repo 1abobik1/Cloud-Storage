@@ -84,18 +84,18 @@ export default function TypeBlock({ type }) {
       {filteredFiles.length === 0 ? (
         <div className="p-10 text-center text-gray-600">
           <div className="text-5xl mb-4">📂</div>
-          <p className="text-lg">Нет файлов. Пожалуйста, загрузите файл.</p>
+          <p className="text-lg">Нет файлов.</p>
           <div className="p-4">
             <FileUploader/>
           </div>
-         
+
         </div>
       ) : (
         <div className="p-4 mx-auto bg-white rounded shadow w-100vw">
           <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
-            <TypeFileIcon type={type}/> 
+            <TypeFileIcon type={type}/>
           </h2>
-  
+
           <div className="flex flex-row justify-between">
             <div className="mb-4">
               <button
@@ -106,7 +106,7 @@ export default function TypeBlock({ type }) {
                 {nameSortAsc ? <span className="ml-1">▲</span> : <span className="ml-1">▼</span>}
               </button>
             </div>
-  
+
             <div className="mb-4 mr-28">
               <button
                 onClick={() => {
@@ -120,7 +120,7 @@ export default function TypeBlock({ type }) {
               </button>
             </div>
           </div>
-  
+
           {filteredFiles.map((item) => (
             <FileCard
               key={item.obj_id}
@@ -136,8 +136,8 @@ export default function TypeBlock({ type }) {
       )}
     </>
   );
-  
-  
+
+
 
 
 };

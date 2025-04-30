@@ -1,8 +1,9 @@
 'use client';
 
-import React, { useRef, useState } from 'react';
+import React, {useRef, useState} from 'react';
 import CloudService from '../api/services/CloudServices';
-import { ArrowUpOnSquareIcon } from '@heroicons/react/24/outline';
+import {ArrowUpOnSquareIcon} from '@heroicons/react/24/outline';
+import {cryptoHelper} from "@/app/api/utils/CryptoHelper";
 
 const FileUploader = () => {
   const inputRef = useRef<HTMLInputElement | null>(null);
@@ -20,9 +21,11 @@ const FileUploader = () => {
     if (!selectedFiles || selectedFiles.length === 0) return;
 
     const formData = new FormData();
-    Array.from(selectedFiles).forEach((file) => {
-      formData.append('files', file);
-    });
+    for (const file of Array.from(selectedFiles)) {
+      const encryptedFile = await cryptoHelper.encryptFile(file);
+      formData.append('files', encryptedFile);
+      formData.append('mime_type', file.type);
+    }
 
     const MIN_SPINNER_DURATION = 2000;
     const startTime = Date.now();
@@ -51,7 +54,7 @@ const FileUploader = () => {
 
       setToastMessage('Файл успешно загружен!');
       setToastType('success');
-    } catch (error: any) {
+    } catch (error) {
       console.error(error);
       if (error.code === 'ECONNABORTED') {
         setToastMessage('Время ожидания запроса истекло.');
