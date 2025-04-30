@@ -3,6 +3,7 @@ import AuthService from "@/app/api/services/AuthServices";
 import axios from 'axios';
 import {AuthResponse} from "../models/response/AuthResponse";
 import {AUTH_API_URL} from "@/app/api/http/urls";
+import {generateAndStoreKey, getStoredKey} from "@/app/api/utils/KeyStorage";
 
 
 export default class Store {
@@ -20,43 +21,27 @@ export default class Store {
         this.isAuth = bool;
     }
 
-
-
-    setCode(code: number) {
-        this.code = code;
-    }
-    getCode() {
-        return this.code;
-    }
-
-
     setLoading(bool: boolean) {
         this.isLoading = bool;
     }
 
-    async login(email: string, password: string,platform: string) {
+    async login(email: string, password: string, platform: string) {
         try {
-            const response = await AuthService.login(email, password,platform);
+            const response = await AuthService.login(email, password, platform);
             localStorage.setItem('token', response.data.access_token);
             this.setAuth(true);
 
+
+            try {
+                await getStoredKey();
+            } catch {
+                await generateAndStoreKey();
+            }
+
         } catch (e) {
-            // @ts-ignore
             console.log(e.response?.data);
         }
     }
-
-    // async verify(email: string) {
-    //     try {
-    //         const response = await AuthService.verify(email);
-    //         console.log(response)
-    //         this.setCode(response.data.code);
-    //         return Promise.resolve();
-    //     } catch (e) {
-    //         // @ts-ignore
-    //         return Promise.reject(e);
-    //     }
-    // }
 
     async signup(username: string, email: string, password: string) {
         try {
@@ -64,21 +49,20 @@ export default class Store {
             localStorage.setItem('token', response.data.access_token);
             this.setAuth(true);
 
+            await generateAndStoreKey();
+
         } catch (e) {
-            // @ts-ignore
             console.log(e.response?.data?.message);
 
-        if (e.response?.status === 409) {
-
-            alert('Аккаунт на эту почту уже зарегистрированы.');
-
-          } else {
-
-            console.error(e);
-            alert('Произошла ошибка при регистрации');
-          }
+            if (e.response?.status === 409) {
+                alert('Аккаунт на эту почту уже зарегистрирован.');
+            } else {
+                console.error(e);
+                alert('Произошла ошибка при регистрации');
+            }
         }
     }
+
 
     async logout() {
         try {
@@ -86,7 +70,7 @@ export default class Store {
             localStorage.removeItem('token');
             this.setAuth(false);
 
-        } catch (e: any) {
+        } catch (e) {
             console.log(e.response?.data?.message);
         }
     }
@@ -105,7 +89,7 @@ export default class Store {
             this.setAuth(true);
             return Promise.resolve();
 
-        } catch (e: any) {
+        } catch (e) {
             if (e.response?.status === 401) {
                 this.setAuth(false);
                 localStorage.removeItem('token');

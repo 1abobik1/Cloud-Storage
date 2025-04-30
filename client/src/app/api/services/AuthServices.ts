@@ -15,9 +15,4 @@ export default class AuthService {
         return auth.post('/user/logout');
     }
 
-    
-
-    static async verify(email: string) {
-        return auth.post('/verify-email/', { email });
-    }
 }

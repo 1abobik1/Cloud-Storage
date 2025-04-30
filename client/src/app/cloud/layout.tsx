@@ -13,7 +13,7 @@ function Layout({ children }: { children: React.ReactNode }) {
 
     useEffect(() => {
         if (!store.isLoading && !store.isAuth) {
-            router.push('/'); // редиректим на главную/логин
+            router.push('/'); 
         }
     }, [store.isAuth, store.isLoading]);
 
@@ -22,7 +22,7 @@ function Layout({ children }: { children: React.ReactNode }) {
     }
 
     if (!store.isAuth) {
-        return null; // пока идёт редирект
+        return null; 
     }
 
     return (

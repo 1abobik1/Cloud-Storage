@@ -6,8 +6,7 @@ import ModalDelete from './ModalDelete';
 
 import TypeFileIcon from './TypeFileIcon';
 import Link from 'next/link';
-
-
+import {cryptoHelper} from "@/app/api/utils/CryptoHelper";
 
 
 export type FileCardData = {
@@ -27,9 +26,20 @@ const FileCard: React.FC<FileCardData> = ({ obj_id, created_at, name, url, type,
       if (!response.ok) {
         throw new Error('Ошибка при скачивании файла');
       }
+      const blob = await response.blob();
+      const encryptedFile = new File([blob], name, { type });
+      const decryptedBlob = await cryptoHelper.decryptFile(encryptedFile);
 
-     
-      
+      const downloadUrl = URL.createObjectURL(decryptedBlob);
+      const a = document.createElement('a');
+      a.href = downloadUrl;
+      a.download = name;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(downloadUrl);
+
+
     } catch (error) {
       console.error('Ошибка при скачивании или расшифровке файла:', error);
     }
@@ -65,42 +75,74 @@ const handleCloseModal = () => {
   setIsModalOpen(false); // Закрываем модальное окно
 };
 
-  return (
-    <div className="p-4 mx-auto bg-white border-t border-b border-gray-200 w-full">
+function truncateText(text: string, maxLength: number): string {
+  if (text.length <= maxLength) {
+    return text;
+  }
+  return text.slice(0, maxLength) + '…'; // добавляет троеточие
+}
 
-      <div className="flex justify-between items-center">
+return (
+  <div className="p-4 bg-white border-t border-b border-gray-200 w-full">
+    <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
 
-        <div><TypeFileIcon type={type}/> <Link href={url} target="_blank" rel="noopener noreferrer" >{name}</Link> </div>
-        <div className="w-60% flex items-center">
-  <div className="mr-5 hidden sm:block">{formatDate(created_at)}</div> {/* Скрывается на мобильных */}
-  <div>
+      {/* Название файла с иконкой */}
+      <div className="flex items-center gap-2 w-full min-w-0">
+        <TypeFileIcon type={type}  />
+        <Link
+          href={url}
+          target="_blank"
+          rel="noopener noreferrer"
+          className=" break-words  leading-snug"
+        >
+          <>
+  {/* Для экранов шире 600px — полное имя */}
+  <span className="hidden sm:inline break-all  leading-snug">{name}</span>
 
-            <button
-              onClick={handleDownload}
-              className=" w-6 mx-1"
-            >
-              <DownloadIcon/>
-            </button>
-            <button
-              onClick={handleOpenModal} // Теперь handleDelete без параметров
-              className='w-6  mx-1'
-            >
-              <DeleteIcon/>
-            </button>
-         </div>
+  {/* Для экранов до 600px — сокращённое имя */}
+  <span className="inline sm:hidden">{truncateText(name, 20)}</span>
+</>
 
+        </Link>
+      </div>
+
+      {/* Блок с датой и кнопками */}
+      <div className="flex justify-between items-center sm:justify-end gap-4 w-full sm:w-auto">
+
+        {/* Дата — видно только на >=sm */}
+        <div className="text text-gray-500 ">
+          {formatDate(created_at)}
+        </div>
+
+        {/* Кнопки */}
+        <div className="flex items-center gap-2">
+          <button
+            onClick={handleDownload}
+            className="w-6 h-6 flex items-center justify-center"
+          >
+            <DownloadIcon />
+          </button>
+          <button
+            onClick={handleOpenModal}
+            className="w-6 h-6 flex items-center justify-center"
+          >
+            <DeleteIcon />
+          </button>
         </div>
       </div>
-      {/* Модальное окно для подтверждения удаления */}
-      {isModalOpen && (
-        <ModalDelete
-          message="Вы уверены, что хотите удалить этот файл?"
-          onConfirm={handleDelete}
-          onCancel={handleCloseModal}
-        />
-      )}
     </div>
-  );
+
+    {isModalOpen && (
+      <ModalDelete
+        message="Вы уверены, что хотите удалить этот файл?"
+        onConfirm={handleDelete}
+        onCancel={handleCloseModal}
+      />
+    )}
+  </div>
+);
+
+
 };
 
 export default FileCard;

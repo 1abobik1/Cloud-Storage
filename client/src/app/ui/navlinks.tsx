@@ -6,7 +6,6 @@ import { usePathname } from 'next/navigation';
 import TypeFileIcon from './TypeFileIcon';
 
 const links = [
-  {name: 'Home', href: '/cloud/home', icontype: 'home'  },
   {name: 'Videos',href: '/cloud/videos',icontype: 'video' ,},
   {name: 'Photos',href: '/cloud/photos',icontype: 'photo' ,},
   {name: 'Docs',href: '/cloud/docs',icontype: 'text' ,},

@@ -18,7 +18,7 @@ function Home() {
 
     useEffect(() => {
         if (store.isAuth) {
-            router.push('/cloud/home'); // переход после авторизации
+            router.push('/cloud'); // переход после авторизации
         }
     }, [store.isAuth]);
 
