@@ -42,6 +42,7 @@ export default class CloudService {
             if (value instanceof File) {
                 const encryptedFile = await cryptoHelper.encryptFile(value);
                 encryptedFormData.append(key, encryptedFile);
+                // encryptedFormData.append('mime_type',type);
             } else {
                 encryptedFormData.append(key, value);
             }
