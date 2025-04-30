@@ -2,6 +2,7 @@ import {AxiosResponse} from 'axios';
 import {CloudResponse} from "@/app/api/models/response/CloudResponse";
 import {cloudApi} from '@/app/api/http/cloud';
 import {cryptoHelper} from '@/app/api/utils/CryptoHelper';
+import {FileData} from "@/app/api/models/FileData";
 
 export default class CloudService {
     static async getAllCloud(type: string): Promise<AxiosResponse<CloudResponse>> {
@@ -11,7 +12,7 @@ export default class CloudService {
 
         if (Array.isArray(fileData) && fileData.length > 0) {
             response.data.file_data = await Promise.all(
-                fileData.map(async (file: any) => {
+                fileData.map(async (file: FileData) => {
                     try {
                         const res = await fetch(file.url);
                         const blob = await res.blob();

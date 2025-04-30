@@ -3,6 +3,7 @@ import AuthService from "@/app/api/services/AuthServices";
 import axios from 'axios';
 import {AuthResponse} from "../models/response/AuthResponse";
 import {AUTH_API_URL} from "@/app/api/http/urls";
+import {generateAndStoreKey, getStoredKey} from "@/app/api/utils/KeyStorage";
 
 
 export default class Store {
@@ -24,11 +25,18 @@ export default class Store {
         this.isLoading = bool;
     }
 
-    async login(email: string, password: string,platform: string) {
+    async login(email: string, password: string, platform: string) {
         try {
-            const response = await AuthService.login(email, password,platform);
+            const response = await AuthService.login(email, password, platform);
             localStorage.setItem('token', response.data.access_token);
             this.setAuth(true);
+
+
+            try {
+                await getStoredKey();
+            } catch {
+                await generateAndStoreKey();
+            }
 
         } catch (e) {
             console.log(e.response?.data);
@@ -41,20 +49,20 @@ export default class Store {
             localStorage.setItem('token', response.data.access_token);
             this.setAuth(true);
 
+            await generateAndStoreKey();
+
         } catch (e) {
             console.log(e.response?.data?.message);
 
-        if (e.response?.status === 409) {
-
-            alert('Аккаунт на эту почту уже зарегистрированы.');
-
-          } else {
-
-            console.error(e);
-            alert('Произошла ошибка при регистрации');
-          }
+            if (e.response?.status === 409) {
+                alert('Аккаунт на эту почту уже зарегистрирован.');
+            } else {
+                console.error(e);
+                alert('Произошла ошибка при регистрации');
+            }
         }
     }
+
 
     async logout() {
         try {
