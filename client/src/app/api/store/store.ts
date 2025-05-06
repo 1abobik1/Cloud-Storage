@@ -3,19 +3,35 @@ import AuthService from "@/app/api/services/AuthServices";
 import axios from 'axios';
 import {AuthResponse} from "../models/response/AuthResponse";
 import {AUTH_API_URL} from "@/app/api/http/urls";
-import {generateAndStoreKey, getStoredKey} from "@/app/api/utils/KeyStorage";
+import {
+    decryptKeyWithPassword,
+    encryptKeyWithPassword,
+    generateFileEncryptionKey
+} from '@/app/api/utils/EncryptDecryptKey';
+import {clearKey, getStoredKey, storeKey} from "@/app/api/utils/KeyStorage";
+import {getEncryptedKeyFromToken} from "@/app/api/utils/KeyFromToken";
 
 
 export default class Store {
 
-    code = 0;
     isAuth = false;
-
     isLoading = false;
+    hasCryptoKey = false;
 
     constructor() {
         makeAutoObservable(this);
+        this.initializeKey();
     }
+
+    async initializeKey() {
+        try {
+            await getStoredKey();
+            this.hasCryptoKey = true;
+        } catch {
+            this.hasCryptoKey = false;
+        }
+    }
+
 
     setAuth(bool: boolean) {
         this.isAuth = bool;
@@ -25,31 +41,28 @@ export default class Store {
         this.isLoading = bool;
     }
 
+
     async login(email: string, password: string, platform: string) {
-        try {
-            const response = await AuthService.login(email, password, platform);
-            localStorage.setItem('token', response.data.access_token);
-            this.setAuth(true);
-
-
             try {
-                await getStoredKey();
-            } catch {
-                await generateAndStoreKey();
+                const response = await AuthService.login(email, password, platform);
+                localStorage.setItem('token', response.data.access_token);
+                this.setAuth(true);
+
+            } catch (e) {
+                console.log(e);
             }
-
-        } catch (e) {
-            console.log(e.response?.data);
         }
-    }
 
-    async signup(username: string, email: string, password: string) {
+    async signup(email: string, password: string, platform: string) {
         try {
-            const response = await AuthService.signup(username, email, password);
+            const fileKey = await generateFileEncryptionKey();
+            storeKey(fileKey);
+            this.hasCryptoKey = true;
+            const user_key = await encryptKeyWithPassword(fileKey, password);
+            const response = await AuthService.signup(email, password, user_key, platform);
             localStorage.setItem('token', response.data.access_token);
             this.setAuth(true);
 
-            await generateAndStoreKey();
 
         } catch (e) {
             console.log(e.response?.data?.message);
@@ -63,13 +76,27 @@ export default class Store {
         }
     }
 
+    async decryptAndStoreKey(password: string): Promise<boolean> {
+        try {
+            const encryptedKey = getEncryptedKeyFromToken();
+            await decryptKeyWithPassword(encryptedKey, password);
+            this.hasCryptoKey = true;
+            return true;
+        } catch (err) {
+            console.error("Decryption error:", err);
+            return false;
+        }
+    }
+
+
 
     async logout() {
         try {
             await AuthService.logout();
             localStorage.removeItem('token');
+            clearKey();
             this.setAuth(false);
-
+            this.hasCryptoKey = false;
         } catch (e) {
             console.log(e.response?.data?.message);
         }
