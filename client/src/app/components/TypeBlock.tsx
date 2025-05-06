@@ -104,8 +104,8 @@ export default function TypeBlock({ type }) {
         </div>
       ) : (
         <div className="sm:p-6 p-2 mx-auto bg-white rounded shadow ">
-          <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
-            <TypeFileIcon type={type}/>
+          <h2 className="text-xl font-jetbrains  mb-4 flex items-center gap-2">
+            <TypeFileIcon type={type}/><div className="text-blue-500">{type}</div>
           </h2>
 
           <div className="flex flex-row justify-between">
