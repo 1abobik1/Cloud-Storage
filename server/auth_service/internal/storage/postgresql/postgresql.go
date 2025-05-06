@@ -8,7 +8,7 @@ import (
 
 	"github.com/1abobik1/Cloud-Storage/auth-service/internal/domain/models"
 	"github.com/1abobik1/Cloud-Storage/auth-service/internal/storage"
-	_ "github.com/lib/pq"
+	"github.com/lib/pq"
 )
 
 type PostgesStorage struct {
@@ -40,6 +40,41 @@ func (p *PostgesStorage) SaveUser(ctx context.Context, email string, password []
 	}
 
 	return id, nil
+}
+
+func (p *PostgesStorage) SaveUserKey(ctx context.Context, userID int, userKey string) error {
+	_, err := p.db.ExecContext(ctx, `
+        INSERT INTO user_keys (user_id, user_key)
+        VALUES ($1, $2)
+    `, userID, userKey)
+
+	if err != nil {
+		// ошибка уникальности
+		if pqErr, ok := err.(*pq.Error); ok && pqErr.Code == "23505" {
+			return fmt.Errorf("user key already exists for user_id %d", userID)
+		}
+		return fmt.Errorf("failed to insert user key: %w", err)
+	}
+
+	return nil
+}
+
+func (p *PostgesStorage) GetUserKey(ctx context.Context, userID int) (string, error) {
+	var userKey string
+
+	err := p.db.QueryRowContext(ctx, `
+        SELECT user_key
+        FROM user_keys
+        WHERE user_id = $1
+    `, userID).Scan(&userKey)
+
+	if err == sql.ErrNoRows {
+		return "", storage.ErrUserNotFound
+	} else if err != nil {
+		return "", fmt.Errorf("failed to get user key: %w", err)
+	}
+
+	return userKey, nil
 }
 
 // adding a new token, if there is already a token with such a platform, then simply update it in the database.

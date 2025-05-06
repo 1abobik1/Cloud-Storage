@@ -12,6 +12,8 @@ type UsersStorageI interface {
 	UpsertRefreshToken(ctx context.Context, refreshToken string, userID int, platform string) error
 	FindUser(ctx context.Context, email string) (models.UserModel, error)
 	DeleteRefreshToken(сtx context.Context, refreshToken string) error
+	SaveUserKey(ctx context.Context, userID int, userKey string) error
+	GetUserKey(ctx context.Context, userID int) (string, error)
 }
 
 type userService struct {

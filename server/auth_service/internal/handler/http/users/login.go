@@ -17,7 +17,7 @@ import (
 func (h *userHandler) Login(c *gin.Context) {
 	const op = "handler.http.users.Login"
 
-	var authDTO dto.AuthDTO
+	var authDTO dto.LogInDTO
 
 	if err := c.BindJSON(&authDTO); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Bad request"})
@@ -57,5 +57,7 @@ func (h *userHandler) Login(c *gin.Context) {
 
 	utils.SetRefreshTokenCookie(c, refreshToken)
 
-	c.JSON(http.StatusOK, gin.H{"access_token": accessToken})
+	c.JSON(http.StatusOK, gin.H{
+		"access_token": accessToken,
+	})
 }

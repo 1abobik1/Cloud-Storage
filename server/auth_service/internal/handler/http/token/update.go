@@ -16,7 +16,8 @@ func (h *tokenHandler) handleRefreshToken(refreshToken string) (string, error) {
 
 	if expired {
 		userID := int(claims["user_id"].(float64))
-		return h.tokenService.UpdateRefreshToken(refreshToken, userID)
+		userKey := string(claims["user_key"].(string))
+		return h.tokenService.UpdateRefreshToken(refreshToken, userID, userKey)
 	}
 
 	return refreshToken, nil
