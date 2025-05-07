@@ -1,7 +1,15 @@
+'use client'
 import React from 'react';
-import TypeGetAll from '@/app/components/TypeGetAll';
+
+import dynamic from 'next/dynamic';
 
 const page = () => {
+
+  const TypeGetAll = dynamic(() => import('@/app/components/TypeGetAll'), {
+    ssr: false,
+    loading: () => <p className="text-center text-gray-500">Загрузка графика...</p>,
+  });
+
 
 
   return (

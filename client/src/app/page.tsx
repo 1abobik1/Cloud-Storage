@@ -24,7 +24,7 @@ function Home() {
 
     useEffect(() => {
         if (initialCheckDone && store.isAuth) {
-            router.push('/cloud');
+            router.push('/cloud/home');
         }
     }, [store.isAuth, initialCheckDone]);
 

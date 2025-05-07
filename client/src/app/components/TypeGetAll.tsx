@@ -5,15 +5,26 @@ import CloudService from "../api/services/CloudServices";
 import FileCard from "@/app/ui/FileCard";
 import TypeFileIcon from "../ui/TypeFileIcon";
 import { Loader2 } from 'lucide-react';
-import DiskUsageChart from "../ui/DiskUsageChart";
+import dynamic from 'next/dynamic';
 
 export default function TypeBlock() {
   const [filesByType, setFilesByType] = useState<Record<string, FileData[]>>({});
   const [isLoading, setIsLoading] = useState(true);
   const [isError, setIsError] = useState(false);
-
   const types = ['text', 'photo', 'video', 'unknown'];
   const totalSpace = 10; 
+
+
+  const DiskUsageChart = dynamic(() => import('../ui/DiskUsageChart'), {
+    ssr: false,
+    loading: () => <p className="text-center text-gray-500">Загрузка графика...</p>,
+  });
+
+  
+
+
+
+
 
   useEffect(() => {
     const fetchAllTypes = async () => {
