@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/1abobik1/Cloud-Storage/file_upload_service/internal/domain"
 	_ "github.com/lib/pq"
 )
 
@@ -16,6 +17,7 @@ const (
 
 var ErrQuotaExceeded = errors.New("quota exceeded")
 var ErrNoActivePlan = errors.New("no active plan for user")
+var ErrUserNotFound = errors.New("there is no such user")
 
 type QuotaService struct {
 	db *sql.DB
@@ -103,4 +105,31 @@ func (s *QuotaService) AddUsage(ctx context.Context, userID int, newSize int64) 
 		return ErrNoActivePlan
 	}
 	return nil
+}
+
+func (s *QuotaService) GetUserUsage(ctx context.Context, userID int) (domain.UserUsage, error) {
+	const query = `
+    SELECT
+      up.current_used,
+      p.storage_limit,
+      p.name AS plan_name
+    FROM user_plans up
+    JOIN plans p ON p.id = up.plan_id
+    WHERE up.user_id = $1
+      AND (p.period_days = 0 OR up.expires_at > NOW())
+	`
+
+	var userUsage domain.UserUsage
+
+	err := s.db.QueryRowContext(ctx, query, userID).Scan(&userUsage.CurrentUsed, &userUsage.StorageLimit, &userUsage.PlanName)
+
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return domain.UserUsage{}, ErrUserNotFound
+		}
+
+		return domain.UserUsage{}, err
+	}
+
+	return userUsage, nil
 }

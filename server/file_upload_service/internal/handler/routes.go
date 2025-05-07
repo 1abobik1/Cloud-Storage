@@ -19,9 +19,10 @@ func NewHandler(minioService minio.Client, quotaService *quota.QuotaService) *Ha
 }
 
 func (h *Handler) RegisterRoutes(router *gin.Engine) {
-	routesUserApi := router.Group("/users")
+	routesUserApi := router.Group("/user")
 	{
 		routesUserApi.POST("/:id/plan/init", h.InitUserPlan)
+		routesUserApi.GET("/:id/usage", h.GetUserUsage)
 	}
 
 	routesFileApi := router.Group("/files")

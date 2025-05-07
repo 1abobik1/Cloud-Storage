@@ -67,7 +67,7 @@ func (s *userService) Register(ctx context.Context, email, password, userKey, pl
 // notifyQuotaService делает POST /users/{id}/plan/init и вставляет Bearer-токен
 func notifyQuotaService(baseURL string, userID int, accessToken string) error {
 	client := &http.Client{Timeout: 5 * time.Second}
-	url := fmt.Sprintf("%s/users/%d/plan/init", baseURL, userID)
+	url := fmt.Sprintf("%s/user/%d/plan/init", baseURL, userID)
 
 	req, err := http.NewRequest(http.MethodPost, url, nil)
 	if err != nil {
