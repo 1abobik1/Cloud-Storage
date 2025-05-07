@@ -1,4 +1,4 @@
-import {getStoredKey} from './KeyStorage';
+import {getStoredKey} from "@/app/api/utils/KeyStorage";
 
 function generateIV(): Uint8Array {
     return crypto.getRandomValues(new Uint8Array(12));

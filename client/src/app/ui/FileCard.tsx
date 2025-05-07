@@ -1,13 +1,12 @@
-import React, {useState} from 'react';
+import React, {useContext, useRef, useState} from 'react';
 import CloudService from '../api/services/CloudServices';
-
 import {ArrowDownTrayIcon, TrashIcon} from '@heroicons/react/24/outline';
 import ModalDelete from './ModalDelete';
-
 import TypeFileIcon from './TypeFileIcon';
 import Link from 'next/link';
 import {cryptoHelper} from "@/app/api/utils/CryptoHelper";
-
+import PasswordModal, {PasswordModalRef} from "@/app/ui/PasswordModal";
+import {Context} from "@/app/_app";
 
 export type FileCardData = {
   name: string;
@@ -20,12 +19,34 @@ export type FileCardData = {
 
 const FileCard: React.FC<FileCardData> = ({ obj_id, created_at, name, url, type, onDelete }) => {
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
+  const [downloadError, setDownloadError] = useState<string | null>(null);
+  const passwordModalRef = useRef<PasswordModalRef>(null);
+  const { store } = useContext(Context);
+
   const handleDownload = async () => {
     try {
-      const response = await fetch(url);
-      if (!response.ok) {
-        throw new Error('Ошибка при скачивании файла');
+      setDownloadError(null);
+
+      // Проверяем наличие ключа
+      await store.initializeKey();
+
+      if (!store.hasCryptoKey) {
+        passwordModalRef.current?.open();
+        return;
       }
+
+      await performDownload();
+    } catch (error) {
+      console.error('Download error:', error);
+      setDownloadError('Ошибка при скачивании файла');
+    }
+  };
+
+  const performDownload = async () => {
+    try {
+      const response = await fetch(url);
+      if (!response.ok) throw new Error('Failed to download file');
+
       const blob = await response.blob();
       const encryptedFile = new File([blob], name, { type });
       const decryptedBlob = await cryptoHelper.decryptFile(encryptedFile);
@@ -36,113 +57,116 @@ const FileCard: React.FC<FileCardData> = ({ obj_id, created_at, name, url, type,
       a.download = name;
       document.body.appendChild(a);
       a.click();
-      a.remove();
+      document.body.removeChild(a);
       URL.revokeObjectURL(downloadUrl);
-
-
+      return true; // Успешное скачивание
     } catch (error) {
-      console.error('Ошибка при скачивании или расшифровке файла:', error);
+      console.error('Decryption error:', error);
+      throw error;
+    }
+  };
+
+  const handlePasswordSubmit = async (password: string): Promise<boolean> => {
+    try {
+      const success = await store.decryptAndStoreKey(password);
+      if (!success) {
+        setDownloadError('Неверный пароль');
+        return false;
+      }
+
+      const downloadSuccess = await performDownload();
+      passwordModalRef.current?.close();
+      return downloadSuccess;
+    } catch (error) {
+      console.error('Password submit error:', error);
+      setDownloadError(error.message || 'Ошибка при расшифровке файла');
+      return false;
     }
   };
 
   const handleDelete = async () => {
     try {
-      const response = await CloudService.deleteFile(type, obj_id); // Вызов метода с type и obj_id
-      console.log('Файл успешно удален:', response);
+      await CloudService.deleteFile(type, obj_id);
       setIsModalOpen(false);
-      onDelete(obj_id); // Удаляем файл из списка в родительском компоненте
+      onDelete(obj_id);
     } catch (error) {
-      console.error('Ошибка при удалении файла:', error);
-      // Можно показать сообщение об ошибке пользователю
+      console.error('Delete error:', error);
     }
   };
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
-    return date.toLocaleString(); // Выводит дату в формате, зависящем от локали
+    return date.toLocaleString();
   };
 
-const DeleteIcon =TrashIcon
-const DownloadIcon = ArrowDownTrayIcon
+  const truncateText = (text: string, maxLength: number): string => {
+    return text.length <= maxLength ? text : text.slice(0, maxLength) + '…';
+  };
 
+  return (
+      <>
+        <PasswordModal
+            ref={passwordModalRef}
+            onSubmit={handlePasswordSubmit}
+            title="Для скачивания введите пароль"
+            description="Этот файл защищен шифрованием. Для доступа требуется ваш пароль."
+        />
 
+        <div className="p-4 bg-white border-t border-b border-gray-200 w-full">
+          <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
+            <div className="flex items-center gap-2 w-full min-w-0">
+              <TypeFileIcon type={type} />
+              <Link
+                  href={url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="break-words leading-snug"
+              >
+                <span className="hidden sm:inline break-all leading-snug">{name}</span>
+                <span className="inline sm:hidden">{truncateText(name, 20)}</span>
+              </Link>
+            </div>
 
-const handleOpenModal = () => {
-  setIsModalOpen(true); // Открываем модальное окно при нажатии "Удалить"
-};
+            <div className="flex justify-between items-center sm:justify-end gap-4 w-full sm:w-auto">
+              <div className="text text-gray-500">
+                {formatDate(created_at)}
+              </div>
 
-const handleCloseModal = () => {
-  setIsModalOpen(false); // Закрываем модальное окно
-};
+              <div className="flex items-center gap-2">
+                <button
+                    onClick={handleDownload}
+                    className="w-6 h-6 flex items-center justify-center text-blue-500 hover:text-blue-700"
+                    aria-label="Скачать файл"
+                >
+                  <ArrowDownTrayIcon className="w-5 h-5" />
+                </button>
+                <button
+                    onClick={() => setIsModalOpen(true)}
+                    className="w-6 h-6 flex items-center justify-center text-red-500 hover:text-red-700"
+                    aria-label="Удалить файл"
+                >
+                  <TrashIcon className="w-5 h-5" />
+                </button>
+              </div>
+            </div>
+          </div>
 
-function truncateText(text: string, maxLength: number): string {
-  if (text.length <= maxLength) {
-    return text;
-  }
-  return text.slice(0, maxLength) + '…'; // добавляет троеточие
-}
+          {downloadError && (
+              <div className="text-red-500 text-sm mt-2">
+                {downloadError}
+              </div>
+          )}
 
-return (
-  <div className="p-4 bg-white border-t border-b border-gray-200 w-full">
-    <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
-
-      {/* Название файла с иконкой */}
-      <div className="flex items-center gap-2 w-full min-w-0">
-        <TypeFileIcon type={type}  />
-        <Link
-          href={url}
-          target="_blank"
-          rel="noopener noreferrer"
-          className=" break-words  leading-snug"
-        >
-          <>
-  {/* Для экранов шире 600px — полное имя */}
-  <span className="hidden sm:inline break-all  leading-snug">{name}</span>
-
-  {/* Для экранов до 600px — сокращённое имя */}
-  <span className="inline sm:hidden">{truncateText(name, 20)}</span>
-</>
-
-        </Link>
-      </div>
-
-      {/* Блок с датой и кнопками */}
-      <div className="flex justify-between items-center sm:justify-end gap-4 w-full sm:w-auto">
-
-        {/* Дата — видно только на >=sm */}
-        <div className="text text-gray-500 ">
-          {formatDate(created_at)}
+          {isModalOpen && (
+              <ModalDelete
+                  message="Вы уверены, что хотите удалить этот файл?"
+                  onConfirm={handleDelete}
+                  onCancel={() => setIsModalOpen(false)}
+              />
+          )}
         </div>
-
-        {/* Кнопки */}
-        <div className="flex items-center gap-2">
-          <button
-            onClick={handleDownload}
-            className="w-6 h-6 flex items-center justify-center"
-          >
-            <DownloadIcon />
-          </button>
-          <button
-            onClick={handleOpenModal}
-            className="w-6 h-6 flex items-center justify-center"
-          >
-            <DeleteIcon />
-          </button>
-        </div>
-      </div>
-    </div>
-
-    {isModalOpen && (
-      <ModalDelete
-        message="Вы уверены, что хотите удалить этот файл?"
-        onConfirm={handleDelete}
-        onCancel={handleCloseModal}
-      />
-    )}
-  </div>
-);
-
-
+      </>
+  );
 };
 
 export default FileCard;

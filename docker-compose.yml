@@ -6,7 +6,7 @@ services:
     container_name: auth_db
     image: postgres:14-alpine
     env_file:
-      - ./server/auth_service/.env      
+      - ./server/auth_service/.env
     volumes:
       - auth_db_data:/var/lib/postgresql/data
       - ./server/auth_service/docker-entrypoint-initdb.d:/docker-entrypoint-initdb.d
@@ -33,7 +33,7 @@ services:
     container_name: file_upload_db
     image: postgres:14-alpine
     env_file:
-      - ./server/file_upload_service/.env  
+      - ./server/file_upload_service/.env
     volumes:
       - file_upload_db_data:/var/lib/postgresql/data
       - ./server/file_upload_service/docker-entrypoint-initdb.d:/docker-entrypoint-initdb.d
@@ -90,20 +90,20 @@ services:
     networks:
       - app-network
 
-  frontend:
-    container_name: frontend_container
-    build:
-      context: ./client
-    environment:
-      - NEXT_PUBLIC_API_URL=http://auth-service:8080
-      - NEXT_PUBLIC_FILE_API_URL=http://file-upload-service:8081
-    depends_on:
-      - auth-service
-      - file-upload-service
-    ports:
-      - "3000:3000"
-    networks:
-      - app-network
+#  frontend:
+#    container_name: frontend_container
+#    build:
+#      context: ./client
+#    environment:
+#      - NEXT_PUBLIC_API_URL=http://auth-service:8080
+#      - NEXT_PUBLIC_FILE_API_URL=http://file-upload-service:8081
+#    depends_on:
+#      - auth-service
+#      - file-upload-service
+#    ports:
+#      - "3000:3000"
+#    networks:
+#      - app-network
 
 volumes:
   auth_db_data:
