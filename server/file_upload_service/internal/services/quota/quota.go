@@ -107,6 +107,28 @@ func (s *QuotaService) AddUsage(ctx context.Context, userID int, newSize int64) 
 	return nil
 }
 
+// RemoveUsage вычитает newSize из current_used в уже существующей активной записи
+func (s *QuotaService) RemoveUsage(ctx context.Context, userID int, newSize int64) error {
+    // Используем GREATEST, чтобы current_used не стал отрицательным
+    res, err := s.db.ExecContext(ctx, `
+        UPDATE user_plans
+        SET current_used = GREATEST(current_used - $1, 0)
+        WHERE user_id = $2
+          AND expires_at > NOW()
+    `, newSize, userID)
+    if err != nil {
+        return fmt.Errorf("remove usage: %w", err)
+    }
+    rows, err := res.RowsAffected()
+    if err != nil {
+        return fmt.Errorf("remove usage rows: %w", err)
+    }
+    if rows == 0 {
+        return ErrNoActivePlan
+    }
+    return nil
+}
+
 func (s *QuotaService) GetUserUsage(ctx context.Context, userID int) (domain.UserUsage, error) {
 	const query = `
     SELECT
