@@ -1,14 +1,15 @@
 import React from 'react';
 import {
-  FilePdfTwoTone,
-  FileImageTwoTone,
+  HomeTwoTone,
+  FileTextTwoTone,
+  CameraTwoTone ,
   FileUnknownTwoTone,
   PlayCircleTwoTone
 } from '@ant-design/icons';
 
 
 
-type TypeFileIcon = 'text' | 'photo' | 'video' |'unknown'  ;
+type TypeFileIcon = 'text' | 'photo' | 'video' |'unknown'|'home'  ;
 
 interface FileIconProps {
   type: string;
@@ -22,9 +23,9 @@ interface FileIconProps {
 
 const TypeFileIcon: React.FC<FileIconProps> = ({ type, size = 24 }) => {
   const iconMap: Record<TypeFileIcon, React.ReactNode> = {
-
-    text: <FilePdfTwoTone color="###1890ff" />,
-    photo: <FileImageTwoTone color="##1890ff" />,
+    home: <HomeTwoTone  color="###1890ff"/>,
+    text: <FileTextTwoTone   color="###1890ff" />,
+    photo: <CameraTwoTone  color="##1890ff" />,
     video:  <PlayCircleTwoTone color="##1890ff" />,
     unknown: <FileUnknownTwoTone color="##1890ff" />,
   };

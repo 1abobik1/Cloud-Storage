@@ -24,7 +24,7 @@ function Home() {
 
     useEffect(() => {
         if (initialCheckDone && store.isAuth) {
-            router.push('/cloud');
+            router.push('/cloud/home');
         }
     }, [store.isAuth, initialCheckDone]);
 
@@ -40,7 +40,15 @@ function Home() {
         return <div>Загрузка...</div>
     }
 
-    return <LoginForm />;
+
+
+    return (
+        <div>
+            <LoginForm/>
+        </div>
+   );
+
+
 }
 
 export default observer(Home);
