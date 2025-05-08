@@ -19,7 +19,7 @@ const Header = () => {
 
     return (
         <div className='flex flex-row justify-between px-5 '>
-            <div className="flex flex-row  p-4 my-4 bg-white ">
+            <div className="flex flex-row  p-4 my-4 ">
                 <TypeFileIcon type={activeLink.icontype} size={28}/>
                 
             </div>
