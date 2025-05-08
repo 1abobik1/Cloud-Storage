@@ -48,17 +48,20 @@ export default function DataCounter() {
   if (loading || !usage) return <div className="text-gray-600">Загрузка...</div>;
 
   const { current_used_gb, storage_limit_gb, plan_name,current_used_mb } = usage;
-  const percentUsed = (current_used_gb / storage_limit_gb) * 100;
-
   
+  const totalMbUsed = current_used_gb * 1024 + current_used_mb;
+const totalMbLimit = storage_limit_gb * 1024;
+const percentUsed = (totalMbUsed / totalMbLimit) * 100;
 
+
+console.log('Использовано:', percentUsed.toFixed(2) + '%');
 
   return (
     <div className="p-2 max-w">
       <h3 className="text-lg font-jetbrains text-blue-600 mb-2">Тариф - {plan_name}:</h3>
       <div className="w-full h-10 bg-gray-200 rounded-lg flex items-center overflow-hidden">
         <div
-          className={`h-full text-white px-3 flex items-center transition-all duration-500 ${
+          className={`h-full text-white  flex items-center transition-all duration-500 ${
             percentUsed > 80 ? 'bg-red-500' : 'bg-blue-500'
           }`}
           style={{ width: `${percentUsed}%` }}
@@ -74,7 +77,7 @@ export default function DataCounter() {
 
       </div>
       <div className="text-sm font-semibold text-gray-800">
-        Занято {current_used_mb.toFixed(1)} МБ из {usage.storage_limit_gb} ГБ
+        Занято {current_used_gb}.{Math.round(current_used_mb)} ГБ из {usage.storage_limit_gb} ГБ
       </div>
     </div>
   );

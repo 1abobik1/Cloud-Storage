@@ -116,15 +116,12 @@ const FileCard: React.FC<FileCardData> = ({ obj_id, created_at, name, url, type,
           <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
             <div className="flex items-center gap-2 w-full min-w-0">
               <TypeFileIcon type={type} />
-              <Link
-                  href={url}
-                  target="_blank"
-                  rel="noopener noreferrer"
+              <div
                   className="break-words leading-snug"
               >
                 <span className="hidden sm:inline break-all leading-snug">{name}</span>
                 <span className="inline sm:hidden">{truncateText(name, 20)}</span>
-              </Link>
+              </div>
             </div>
 
             <div className="flex justify-between items-center sm:justify-end gap-4 w-full sm:w-auto">
