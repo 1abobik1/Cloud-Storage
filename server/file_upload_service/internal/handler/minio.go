@@ -462,7 +462,8 @@ func (h *Handler) DeleteOne(c *gin.Context) {
 
 	log.Printf("objectID... ID:%s, userID:%d, FileCategory:%s", objectID.ObjID, userID, objectID.FileCategory)
 
-	if err := h.minioService.DeleteOne(c, objectID, userID); err != nil {
+	size, err := h.minioService.DeleteOne(c, objectID, userID)
+	if err != nil {
 		log.Printf("Error: %v,  %s", err, op)
 
 		if errors.Is(err, minio.ErrFileNotFound) {
@@ -489,6 +490,11 @@ func (h *Handler) DeleteOne(c *gin.Context) {
 			Details: err,
 		})
 		return
+	}
+
+	if err := h.quotaService.RemoveUsage(c, userID, size); err != nil {
+		log.Printf("RemoveUsage error: %v", err)
+		c.Status(http.StatusInternalServerError)
 	}
 
 	c.JSON(http.StatusOK, gin.H{
@@ -521,7 +527,7 @@ func (h *Handler) DeleteMany(c *gin.Context) {
 
 	log.Printf("ObjectIDsDto: %v \n", objectIDs)
 
-	errs := h.minioService.DeleteMany(c, objectIDs.ObjectIDs, userID)
+	sizes, errs := h.minioService.DeleteMany(c, objectIDs.ObjectIDs, userID)
 	for _, err := range errs {
 		if err != nil {
 			log.Printf("Error: %v,  %s", err, op)
@@ -551,6 +557,16 @@ func (h *Handler) DeleteMany(c *gin.Context) {
 			})
 			return
 		}
+	}
+
+	var totalRemoved int64
+	for _, sz := range sizes {
+		totalRemoved += sz
+	}
+
+	if err := h.quotaService.RemoveUsage(c.Request.Context(), userID, totalRemoved); err != nil {
+		log.Printf("RemoveUsage error: %v", err)
+		c.Status(http.StatusInternalServerError)
 	}
 
 	c.JSON(http.StatusOK, gin.H{
