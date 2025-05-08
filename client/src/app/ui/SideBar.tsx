@@ -6,6 +6,7 @@ import { MenuIcon, XIcon } from 'lucide-react';
 import { usePathname } from 'next/navigation';
 import clsx from 'clsx';
 import Link from 'next/link';
+import DataCounter from './DataCounter';
 export default function SideBar() {
   const [isOpen, setIsOpen] = useState(false);
   const pathname = usePathname();
@@ -34,13 +35,25 @@ export default function SideBar() {
         }
       )}>
       <div className="flex flex-col justify-between h-full">
-  <NavLinks />
-  <Link
+      <div className="w-full">
+    <NavLinks />
+  </div>
+  
+  <div className="bg-white shadow-md rounded-2xl p-2   flex flex-col items-center gap-1 border border-gray-200">
+  <DataCounter/>
+
+<Link
   href="/cloud/sales"
-  className="mt-auto inline-block bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 text-center"
+  className="bg-white hover:bg-blue-500 w-full text-center transition rounded-lg px-4 py-2 m-2 text-sm font-medium text-gray-800 shadow"
 >
   Расширить 
 </Link>
+
+
+</div>
+
+  
+ 
 </div>
 
         
