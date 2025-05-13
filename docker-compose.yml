@@ -90,20 +90,20 @@ services:
     networks:
       - app-network
 
-#  frontend:
-#    container_name: frontend_container
-#    build:
-#      context: ./client
-#    environment:
-#      - NEXT_PUBLIC_API_URL=http://auth-service:8080
-#      - NEXT_PUBLIC_FILE_API_URL=http://file-upload-service:8081
-#    depends_on:
-#      - auth-service
-#      - file-upload-service
-#    ports:
-#      - "3000:3000"
-#    networks:
-#      - app-network
+  frontend:
+   container_name: frontend_container
+   build:
+     context: ./client
+   environment:
+     - NEXT_PUBLIC_API_URL=http://auth-service:8080
+     - NEXT_PUBLIC_FILE_API_URL=http://file-upload-service:8081
+   depends_on:
+     - auth-service
+     - file-upload-service
+   ports:
+     - "3000:3000"
+   networks:
+     - app-network
 
 volumes:
   auth_db_data:
