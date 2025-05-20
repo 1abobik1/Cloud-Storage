@@ -12,20 +12,21 @@ function Home() {
     const [initialCheckDone, setInitialCheckDone] = useState(false);
 
     useEffect(() => {
-        if (typeof window !== 'undefined') {
-            const checkAuth = async () => {
-                if (localStorage.getItem('token')) {
-                    await store.checkAuth();
-                }
-                setInitialCheckDone(true);
-            };
-            checkAuth();
-        }
+        const checkAuth = async () => {
+            if (localStorage.getItem('token')) {
+                await store.checkAuth();
+            }
+            setInitialCheckDone(true);
+        };
+
+        checkAuth();
     }, []);
 
     useEffect(() => {
         if (initialCheckDone && store.isAuth) {
-            router.push('/cloud/home');
+            // Получаем сохраненный путь или используем '/cloud/home' по умолчанию
+            const savedPath = localStorage.getItem('lastPath') || '/cloud/home';
+            router.push(savedPath);
         }
     }, [store.isAuth, initialCheckDone]);
 
@@ -41,15 +42,11 @@ function Home() {
         return <div>Загрузка...</div>
     }
 
-
-
     return (
         <div>
             <LoginForm/>
         </div>
-   );
-
-
+    );
 }
 
 export default observer(Home);

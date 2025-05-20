@@ -1,10 +1,9 @@
 'use client';
-import { useEffect, useState } from "react";
-import { FileData } from "@/app/api/models/FileData";
+import {useEffect, useState} from "react";
+import {FileData} from "@/app/api/models/FileData";
 import CloudService from "../api/services/CloudServices";
-import FileCard from "@/app/ui/FileCard";
 import TypeFileIcon from "../ui/TypeFileIcon";
-import { Loader2 } from 'lucide-react';
+import {Loader2} from 'lucide-react';
 import dynamic from 'next/dynamic';
 
 export default function TypeBlock() {
@@ -12,7 +11,7 @@ export default function TypeBlock() {
   const [isLoading, setIsLoading] = useState(true);
   const [isError, setIsError] = useState(false);
   const types = ['text', 'photo', 'video', 'unknown'];
-  const totalSpace = 10; 
+  const totalSpace = 10;
 
 
   const DiskUsageChart = dynamic(() => import('../ui/DiskUsageChart'), {
@@ -20,7 +19,7 @@ export default function TypeBlock() {
     loading: () => <p className="text-center text-gray-500">Загрузка графика...</p>,
   });
 
-  
+
 
 
 
@@ -41,6 +40,7 @@ export default function TypeBlock() {
               name: String(file.name),
               url: String(file.url),
               created_at: String(file.created_at),
+              mime_type: String(file.mime_type)
             }));
           } else {
             result[type] = [];
@@ -110,10 +110,10 @@ export default function TypeBlock() {
             </div>
           )}
 
-          
+
         </div>
       ))}
-      
+
 <div className="mt-10 p-4">
   <h2 className="text-xl font-semibold mb-3">📁 Все файлы</h2>
   <div className="flex flex-wrap gap-3 overflow-x-auto">

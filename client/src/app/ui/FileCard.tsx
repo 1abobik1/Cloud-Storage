@@ -162,7 +162,7 @@ const FileCard: React.FC<FileCardData> = ({ obj_id, created_at, name, url, type,
         <PasswordModal
             ref={passwordModalRef}
             onSubmit={handlePasswordSubmit}
-            title="Для скачивания введите пароль"
+            title="Для скачивания или просмотра введите пароль"
             description="Этот файл защищен шифрованием. Для доступа требуется ваш пароль."
         />
 
