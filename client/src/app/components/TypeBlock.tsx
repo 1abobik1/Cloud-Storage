@@ -5,7 +5,7 @@ import CloudService from "../api/services/CloudServices";
 import FileCard from "@/app/ui/FileCard";
 import TypeFileIcon from "../ui/TypeFileIcon";
 import FileUploader from "./FileUploader";
-import { Loader2 } from 'lucide-react'; 
+import {Loader2} from 'lucide-react';
 
 export default function TypeBlock({ type }) {
   const [file, setFile] = useState<FileData[]>([]);
@@ -15,12 +15,13 @@ export default function TypeBlock({ type }) {
   const [nameSortAsc, setNameSortAsc] = useState<boolean>(true);
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc'); // сортировка по возрастанию или убыванию
   const [filteredFiles, setFilteredFiles] = useState<FileData[]>([]);
-  
+
 
   useEffect(() => {
     const fetchData = async () => {
       try {
         const response = await CloudService.getAllCloud(type);
+        console.log(response.data)
         const fileData = response.data.file_data;
 
         if (Array.isArray(fileData)) {
@@ -29,10 +30,11 @@ export default function TypeBlock({ type }) {
             name: String(file.name),
             url: String(file.url),
             created_at: String(file.created_at),
+            mime_type: String(file.mime_type)
           }));
           setFile(files);
           setFilteredFiles(files);
-          
+
         } else {
           setFile([]);
         }
@@ -91,7 +93,7 @@ export default function TypeBlock({ type }) {
   return (
     <>
 
-  
+
 
       {filteredFiles.length === 0 ? (
         <div className="p-10 text-center text-gray-600">
@@ -141,6 +143,7 @@ export default function TypeBlock({ type }) {
               url={item.url}
               created_at={item.created_at}
               type={type}
+              mime_type={item.mime_type}
               onDelete={handleDelete}
             />
           ))}

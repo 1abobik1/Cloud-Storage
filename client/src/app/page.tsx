@@ -12,14 +12,15 @@ function Home() {
     const [initialCheckDone, setInitialCheckDone] = useState(false);
 
     useEffect(() => {
-        const checkAuth = async () => {
-            if (localStorage.getItem('token')) {
-                await store.checkAuth();
-            }
-            setInitialCheckDone(true);
-        };
-
-        checkAuth();
+        if (typeof window !== 'undefined') {
+            const checkAuth = async () => {
+                if (localStorage.getItem('token')) {
+                    await store.checkAuth();
+                }
+                setInitialCheckDone(true);
+            };
+            checkAuth();
+        }
     }, []);
 
     useEffect(() => {
