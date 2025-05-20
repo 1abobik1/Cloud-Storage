@@ -5,7 +5,7 @@ import {Context} from '@/app/_app';
 import {observer} from "mobx-react-lite";
 
 const LoginForm = () => {
-  const [platform, setPlatform] = useState('');
+  const [platform, setPlatform] = useState('ios-mobile');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const { store } = useContext(Context);
@@ -57,7 +57,7 @@ const LoginForm = () => {
             />
           </div>
           <div>
-            <label htmlFor="platform" className="block text-sm font-medium text-gray-700">
+            {/* <label htmlFor="platform" className="block text-sm font-medium text-gray-700">
               Платформа
             </label>
             <select
@@ -73,7 +73,7 @@ const LoginForm = () => {
               </option>
               <option value="ios-mobile">iOS</option>
               <option value="android-mobile">Android</option>
-            </select>
+            </select> */}
 
         {/* Тут капча важно */}
         <div style={{ transform: "scale(0.9)", transformOrigin: "0 0", maxWidth: "100%" }}>

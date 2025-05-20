@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { jwtDecode } from 'jwt-decode';
-
+import { useUsageRefresh } from '@/app/components/UsageRefreshContext';
 interface UsageResponse {
   current_used_gb: number;
   current_used_mb: number;
@@ -16,8 +16,10 @@ interface JwtPayload {
 export default function DataCounter() {
   const [usage, setUsage] = useState<UsageResponse | null>(null);
   const [loading, setLoading] = useState(true);
+const { refreshKey } = useUsageRefresh(); 
 
-  useEffect(() => {
+
+  const fetchUsage = async () => {
     const token = localStorage.getItem('token');
     if (!token) return;
 
@@ -43,7 +45,12 @@ export default function DataCounter() {
       .finally(() => {
         setLoading(false);
       });
-  }, []);
+  } ;
+
+    useEffect(() => {
+    setLoading(true);
+    fetchUsage();
+  }, [refreshKey]); 
 
   if (loading || !usage) return <div className="text-gray-600">Загрузка...</div>;
 
@@ -54,7 +61,7 @@ const totalMbLimit = storage_limit_gb * 1024;
 const percentUsed = (totalMbUsed / totalMbLimit) * 100;
 
 
-console.log('Использовано:', percentUsed.toFixed(2) + '%');
+
 
   return (
     <div className="p-2 max-w">
