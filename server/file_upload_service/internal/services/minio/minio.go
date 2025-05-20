@@ -117,11 +117,19 @@ func (m *minioClient) CreateOne(ctx context.Context, file domain.FileContent, us
 		return dto.FileResponse{}, fmt.Errorf("error when creating the URL for the object %s: %v", file.Name, err)
 	}
 
+	// get Metadata in minio
+	objInfo, err := m.mc.StatObject(ctx, fileCategory, objID, minio.StatObjectOptions{})
+	if err != nil {
+		log.Printf("Error: %v, %s \n", err, op)
+		return dto.FileResponse{}, fmt.Errorf("error getting information about the object %s: %w", objID, ErrFileNotFound)
+	}
+
 	fileResp := dto.FileResponse{
 		Name:       file.Name,
 		Created_At: file.CreatedAt.Format(time.RFC3339),
 		ObjID:      objID,
 		Url:        url.String(),
+		MimeType: objInfo.ContentType,
 	}
 	// в redis храним только json (не поддерживает структуры)
 	fileRespJson, err := json.Marshal(fileResp)
@@ -256,6 +264,7 @@ func (m *minioClient) GetOne(ctx context.Context, objectID dto.ObjectID, userID 
 	fileResp.Name = objInfo.UserMetadata["File_name"]
 	fileResp.ObjID = objectID.ObjID
 	fileResp.Url = minioURL.String()
+	fileResp.MimeType = objInfo.ContentType
 
 	// преобразуем структуру в json для удобного хранения в redis
 	fileRespJson, errJson := json.Marshal(fileResp)
@@ -333,6 +342,7 @@ func (m *minioClient) GetAll(ctx context.Context, t string, userID int) ([]dto.F
 			fileResp.Name = objInfo.UserMetadata["File_name"]
 			fileResp.ObjID = object.Key
 			fileResp.Url = presignedURL.String()
+			fileResp.MimeType = objInfo.ContentType
 
 			// преобразуем структуру в json
 			fileRespJson, err := json.Marshal(fileResp)
