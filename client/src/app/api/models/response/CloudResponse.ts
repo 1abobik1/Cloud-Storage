@@ -5,4 +5,8 @@ export interface CloudResponse {
     message: string;
     status: number;
 }
-
+export interface OneFileResponse {
+    file_data: FileData;
+    message: string;
+    status: number;
+}

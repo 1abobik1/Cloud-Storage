@@ -1,8 +1,11 @@
 'use client';
-import { useEffect, useState } from "react";
-import { FileData } from "@/app/api/models/FileData";
+import {useEffect, useState} from "react";
+import {FileData} from "@/app/api/models/FileData";
 import CloudService from "../api/services/CloudServices";
-import { Loader2 } from 'lucide-react';
+
+import TypeFileIcon from "../ui/TypeFileIcon";
+import {Loader2} from 'lucide-react';
+
 import dynamic from 'next/dynamic';
 import TypeFileIcon from "../ui/TypeFileIcon";
 
@@ -12,7 +15,9 @@ export default function TypeBlock() {
   const [isLoading, setIsLoading] = useState(true);
   const [isError, setIsError] = useState(false);
   const types = ['text', 'photo', 'video', 'unknown'];
+
  
+
 
   const DiskUsageChart = dynamic(() => import('../ui/DiskUsageChart'), {
     ssr: false,
@@ -33,7 +38,7 @@ export default function TypeBlock() {
   });
   
 
-  
+
 
 
 
@@ -54,6 +59,7 @@ export default function TypeBlock() {
               name: String(file.name),
               url: String(file.url),
               created_at: String(file.created_at),
+              mime_type: String(file.mime_type)
             }));
           } else {
             result[type] = [];
@@ -97,16 +103,38 @@ export default function TypeBlock() {
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-2 gap-6 p-4">
       {types.map((type) => (
         <div
-        key={type}
-        className="bg-white border rounded-xl shadow-md p-4 flex flex-col justify-between w-full h-64"
-      >
-        <div className="flex items-center gap-2 mb-3">
-          <TypeFileIcon type={type} />
-          <h2 className="text-lg font-jetbrains text-blue-600 capitalize">{type}</h2>
+
+          key={type}
+          className="bg-white border rounded-xl shadow-md p-4 flex flex-col justify-between w-full h-64"
+        >
+          <div className="flex items-center gap-2 mb-3">
+            <TypeFileIcon type={type} />
+            <h2 className="text-lg font-jetbrains text-blue-600 capitalize">{type}</h2>
+          </div>
+
+          {filesByType[type]?.length === 0 ? (
+            <div className="text-gray-500 text-center flex-1 flex flex-col items-center justify-center">
+              <p className="text-xl">📂 Нет файлов</p>
+            </div>
+          ) : (
+            <div className="space-y-2 overflow-auto flex-1">
+              {filesByType[type].map((item) => (
+                <div
+                  key={item.obj_id}
+                  className="text-xl border rounded p-2 flex justify-between items-center"
+                ><a href={item.url} target="_blank" rel="noopener noreferrer" className="text-blue-500 text-sm">
+                  <span className="truncate max-w-[150px]">{item.name}</span>
+                  </a>
+                </div>
+              ))}
+            </div>
+          )}
+
+
         </div>
-  <TypeBlockHome type={type}/>
- </div>
-))}
+      ))}
+
+
 <div className="mt-10 p-4">
   <h2 className="text-xl font-semibold mb-3">📁 Все файлы</h2>
   <div className="flex flex-wrap gap-3 overflow-x-auto">

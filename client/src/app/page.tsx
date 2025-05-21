@@ -24,7 +24,9 @@ function Home() {
 
     useEffect(() => {
         if (initialCheckDone && store.isAuth) {
-            router.push('/cloud/home');
+            // Получаем сохраненный путь или используем '/cloud/home' по умолчанию
+            const savedPath = localStorage.getItem('lastPath') || '/cloud/home';
+            router.push(savedPath);
         }
     }, [store.isAuth, initialCheckDone]);
 
@@ -40,15 +42,11 @@ function Home() {
         return <div>Загрузка...</div>
     }
 
-
-
     return (
         <div>
             <LoginForm/>
         </div>
-   );
-
-
+    );
 }
 
 export default observer(Home);
