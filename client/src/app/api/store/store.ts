@@ -94,6 +94,7 @@ export default class Store {
         try {
             await AuthService.logout();
             localStorage.removeItem('token');
+            localStorage.removeItem('lastPath');
             clearKey();
             this.setAuth(false);
             this.hasCryptoKey = false;

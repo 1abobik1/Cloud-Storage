@@ -1,10 +1,14 @@
 import {AxiosResponse} from 'axios';
-import {CloudResponse} from "@/app/api/models/response/CloudResponse";
+import {CloudResponse, OneFileResponse} from "@/app/api/models/response/CloudResponse";
 import {cloudApi} from '@/app/api/http/cloud';
 
 export default class CloudService {
     static async getAllCloud(type: string): Promise<AxiosResponse<CloudResponse>> {
         return await cloudApi.get<CloudResponse>(`/files/all?type=${type}`);
+    }
+
+    static async getOneFile(id:string,type: string): Promise<AxiosResponse<OneFileResponse>> {
+        return await cloudApi.get<OneFileResponse>(`/files/one?id=${id}type=${type}`);
     }
 
 
