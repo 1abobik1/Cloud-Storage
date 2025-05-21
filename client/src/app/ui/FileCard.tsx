@@ -99,10 +99,8 @@ const FileCard: React.FC<FileCardData> = ({ obj_id, created_at, name, url, type,
       const blob = await response.blob();
       // тут memitype
       const encryptedFile = new File([blob], name, {type: mime_type } );
-      console.log(encryptedFile)
       // функция для Славяна //
       const decryptedBlob = await cryptoHelper.decryptFile(encryptedFile);
-      console.log(decryptedBlob)
       // Создаём ссылку на расшифрованный Blob
       const viewUrl = URL.createObjectURL(decryptedBlob);
 
