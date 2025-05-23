@@ -6,7 +6,6 @@ import { usePathname } from 'next/navigation';
 import TypeFileIcon from './TypeFileIcon';
 
 const links = [
-
   {name: 'Home',href: '/cloud/home',icontype: 'home' ,},
   {name: 'Videos',href: '/cloud/videos',icontype: 'video' ,},
   {name: 'Photos',href: '/cloud/photos',icontype: 'photo' ,},
@@ -16,14 +15,14 @@ const links = [
 
 export default function NavLinks() {
   const pathname = usePathname();
- 
- 
+
+
   return (
     <>
       {links.map((link) => {
-       
+
         return (
-          
+
           <Link
           key={link.name}
           href={link.href}
@@ -40,7 +39,7 @@ export default function NavLinks() {
 </div>
 
         </Link>
-          
+
         );
       })}
     </>

@@ -1,6 +1,7 @@
-import { useEffect, useState } from 'react';
-import { jwtDecode } from 'jwt-decode';
-import { useUsageRefresh } from '@/app/components/UsageRefreshContext';
+import {useEffect, useState} from 'react';
+import {jwtDecode} from 'jwt-decode';
+import {useUsageRefresh} from '@/app/components/UsageRefreshContext';
+
 interface UsageResponse {
   current_used_gb: number;
   current_used_mb: number;
@@ -16,7 +17,7 @@ interface JwtPayload {
 export default function DataCounter() {
   const [usage, setUsage] = useState<UsageResponse | null>(null);
   const [loading, setLoading] = useState(true);
-const { refreshKey } = useUsageRefresh(); 
+const { refreshKey } = useUsageRefresh();
 
 
   const fetchUsage = async () => {
@@ -36,7 +37,6 @@ const { refreshKey } = useUsageRefresh();
         return res.json();
       })
       .then(data => {
-        console.log('Ответ usage:', data);
         setUsage(data);
       })
       .catch(err => {
@@ -50,12 +50,12 @@ const { refreshKey } = useUsageRefresh();
     useEffect(() => {
     setLoading(true);
     fetchUsage();
-  }, [refreshKey]); 
+  }, [refreshKey]);
 
   if (loading || !usage) return <div className="text-gray-600">Загрузка...</div>;
 
   const { current_used_gb, storage_limit_gb, plan_name,current_used_mb } = usage;
-  
+
   const totalMbUsed = current_used_gb * 1024 + current_used_mb;
 const totalMbLimit = storage_limit_gb * 1024;
 const percentUsed = (totalMbUsed / totalMbLimit) * 100;
@@ -73,10 +73,10 @@ const percentUsed = (totalMbUsed / totalMbLimit) * 100;
           }`}
           style={{ width: `${percentUsed}%` }}
         >
-         
+
         </div>
 
-        
+
 
 
 

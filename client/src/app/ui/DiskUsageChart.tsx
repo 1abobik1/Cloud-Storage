@@ -1,10 +1,10 @@
 // components/DiskUsageChart.tsx
-import { Pie } from "react-chartjs-2";
-import { Chart as ChartJS, ArcElement, CategoryScale, Tooltip, Legend } from 'chart.js';
+import {Pie} from "react-chartjs-2";
+import {ArcElement, CategoryScale, Chart as ChartJS, Legend, Tooltip} from 'chart.js';
+import {useEffect, useState} from 'react';
+import {jwtDecode} from 'jwt-decode';
 
 ChartJS.register(ArcElement, CategoryScale, Tooltip, Legend);
-import { useEffect, useState } from 'react';
-import { jwtDecode } from 'jwt-decode';
 
 interface UsageResponse {
   current_used_gb: number;
@@ -19,17 +19,16 @@ interface JwtPayload {
 }
 interface DiskUsageChartProps {
   fileCounts: Record<string, number>;
-  totalUsedSpace: number;
 }
 
 
-const DiskUsageChart: React.FC<DiskUsageChartProps> = ({ fileCounts, totalUsedSpace }) => {
-  
+const DiskUsageChart: React.FC<DiskUsageChartProps> = ({ fileCounts }) => {
+
 
   const [usage, setUsage] = useState<UsageResponse | null>(null);
     const[loading, setLoading] = useState(true);
 
-  
+
 
   useEffect(() => {
     const token = localStorage.getItem('token');
@@ -48,7 +47,6 @@ const DiskUsageChart: React.FC<DiskUsageChartProps> = ({ fileCounts, totalUsedSp
         return res.json();
       })
       .then(data => {
-        console.log('Ответ usage:', data);
         setUsage(data);
       })
       .catch(err => {
@@ -60,11 +58,10 @@ const DiskUsageChart: React.FC<DiskUsageChartProps> = ({ fileCounts, totalUsedSp
   }, []);
   if (loading || !usage) return <div className="text-gray-600">Загрузка...</div>;
   const {current_used_gb,current_used_mb,storage_limit_gb } = usage;
-  const ostatok =storage_limit_gb - (current_used_gb + current_used_mb / 1024)
-  const freeSpace = storage_limit_gb - totalUsedSpace / 1024; 
+  const ostatok = storage_limit_gb - (current_used_gb + current_used_mb / 1024)
 
   const chartData = {
-    labels: ['Текст', 'Фото', 'Видео', 'Прочие', 'Свободное место'],
+    labels: ['Свободно','Занято'],
     datasets: [
       {
         data: [
@@ -72,10 +69,10 @@ const DiskUsageChart: React.FC<DiskUsageChartProps> = ({ fileCounts, totalUsedSp
           fileCounts.photo,
           fileCounts.video,
           fileCounts.other,
-          freeSpace,
-          
+          ostatok,
+
         ],
-        backgroundColor: ['#4c6ef5', '#d8e2dc', '#e06c75', '#f5a623', '#a0aec0'], // Цвет для свободного места
+        backgroundColor: ['#a0aec0','#4c6ef5'], // Цвет для свободного места
         borderColor: '#fff',
         borderWidth: 1,
       }
@@ -90,7 +87,7 @@ const DiskUsageChart: React.FC<DiskUsageChartProps> = ({ fileCounts, totalUsedSp
           <Pie data={chartData} options={{ responsive: true }} />
         </div>
         <div className="w-1/2 pl-6">
-          <p className="text-xl">Свободно места: {ostatok.toFixed(2)} GB</p>
+          <p className="text-xl">Свободно места: {ostatok.toFixed(3)} GB</p>
         </div>
       </div>
     </div>
