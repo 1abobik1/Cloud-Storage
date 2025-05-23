@@ -7,7 +7,7 @@ import {cryptoHelper} from "@/app/api/utils/CryptoHelper";
 import PasswordModal, {PasswordModalRef} from "@/app/ui/PasswordModal";
 import {observer} from 'mobx-react-lite';
 import {Context} from '@/app/_app';
-
+import { useUsageRefresh } from './UsageRefreshContext';
 const FileUploader = observer(() => {
   const inputRef = useRef<HTMLInputElement>(null);
   const modalRef = useRef<PasswordModalRef>(null);
@@ -16,7 +16,7 @@ const FileUploader = observer(() => {
   const [toastType, setToastType] = useState<'success' | 'error' | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState<number>(0);
-
+   const { triggerRefresh } = useUsageRefresh();
   const handlePasswordSuccess = async (password: string): Promise<boolean> => {
     try {
       const success = await store.decryptAndStoreKey(password);
@@ -88,6 +88,7 @@ const FileUploader = observer(() => {
       }
 
       setToastMessage('Файл успешно загружен!');
+      triggerRefresh();
       setToastType('success');
     } catch (error) {
       console.error(error);

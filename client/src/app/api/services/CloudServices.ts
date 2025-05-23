@@ -7,9 +7,11 @@ export default class CloudService {
         return await cloudApi.get<CloudResponse>(`/files/all?type=${type}`);
     }
 
-    static async getOneFile(id:string,type: string): Promise<AxiosResponse<OneFileResponse>> {
-        return await cloudApi.get<OneFileResponse>(`/files/one?id=${id}type=${type}`);
+
+    static async getOneFile(id:string,type: string): Promise<AxiosResponse<CloudResponse>> {
+        return await cloudApi.get<CloudResponse>(`/files/one?id=${id}type=${type}`);
     }
+                                                    
 
 
     static async uploadFiles(formData: FormData, config = {}) {

@@ -21,6 +21,7 @@ export default function TypeBlock({ type }) {
     const fetchData = async () => {
       try {
         const response = await CloudService.getAllCloud(type);
+        console.log(response.data)
         const fileData = response.data.file_data;
 
         if (Array.isArray(fileData)) {
