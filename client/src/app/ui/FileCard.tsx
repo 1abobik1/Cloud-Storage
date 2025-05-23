@@ -22,15 +22,7 @@ export type FileCardData = {
 };
 
 
-export type FileOne = {
-  name: string;
-  created_at: string;
-  obj_id: string;
-  url: string;
-  type?: string;
-  onDelete?: (obj_id: string) => void;
-  // memi_type
-};
+
 
 
 
@@ -40,36 +32,8 @@ const FileCard: React.FC<FileCardData> = ({ obj_id, created_at, name, url, type,
   const [downloadError, setDownloadError] = useState<string | null>(null);
   const passwordModalRef = useRef<PasswordModalRef>(null);
   const { store } = useContext(Context);
-  const [file, setFile] = useState<FileData[]>([]);
-  const [isLoading, setIsLoading] = useState<boolean>(true);
-  const [isError, setIsError] = useState<boolean>(false);
-  const [filteredFiles, setFilteredFiles] = useState<FileData[]>([]);
+  
 
-
-    const fetchData = async () => {
-      try {
-        const response = await CloudService.getOneFile(obj_id,type);
-        const fileData = response.data.file_data;
-
-        
-          const files: FileOne[] = fileData.map((file: any) => ({
-            obj_id: String(file.obj_id),
-            name: String(file.name),
-            url: String(file.url),
-            created_at: String(file.created_at),
-            // memi_type
-          }));
-          setFile(files);
-          setFilteredFiles(files);
-          
-        
-      } catch (error) {
-        console.error("Ошибка при получении данных:", error);
-        setIsError(true);
-      } finally {
-        setIsLoading(false);
-      }
-    };
 
     
   
