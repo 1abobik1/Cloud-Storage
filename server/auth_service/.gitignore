@@ -1,4 +1,4 @@
-# .env
-# private_key.pem
-# public_key.pem
-# internal/service/users/testkeys
+.env
+private_key.pem
+public_key.pem
+internal/service/users/testkeys
