@@ -6,12 +6,14 @@ import { usePathname } from 'next/navigation';
 import TypeFileIcon from './TypeFileIcon';
 
 const links = [
+<<<<<<< HEAD
+=======
   {name: 'Home',href: '/cloud/home',icontype: 'home' ,},
+>>>>>>> d6f885d0a78f6c47cd3a9f9105f1bff5aaa853db
   {name: 'Videos',href: '/cloud/videos',icontype: 'video' ,},
   {name: 'Photos',href: '/cloud/photos',icontype: 'photo' ,},
   {name: 'Docs',href: '/cloud/docs',icontype: 'text' ,},
   {name: 'Others',href: '/cloud/unknown',icontype: 'unknown' ,},
-  
 ];
 
 export default function NavLinks() {
