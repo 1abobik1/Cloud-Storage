@@ -1,4 +1,4 @@
-import React, {useContext, useEffect, useRef, useState} from 'react';
+import React, {useContext, useRef, useState} from 'react';
 import CloudService from '../api/services/CloudServices';
 import {ArrowDownTrayIcon, TrashIcon} from '@heroicons/react/24/outline';
 import ModalDelete from './ModalDelete';
@@ -6,10 +6,6 @@ import TypeFileIcon from './TypeFileIcon';
 import {cryptoHelper} from "@/app/api/utils/CryptoHelper";
 import PasswordModal, {PasswordModalRef} from "@/app/ui/PasswordModal";
 import {Context} from "@/app/_app";
-
-import { FileData } from '../api/models/FileData';
-
-
 
 export type FileCardData = {
   name: string;
@@ -21,64 +17,13 @@ export type FileCardData = {
   onDelete: (obj_id: string) => void;
 };
 
-
-export type FileOne = {
-  name: string;
-  created_at: string;
-  obj_id: string;
-  url: string;
-  type?: string;
-  onDelete?: (obj_id: string) => void;
-  // memi_type
-};
-
-
-
 const FileCard: React.FC<FileCardData> = ({ obj_id, created_at, name, url, type, onDelete, mime_type }) => {
 
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
   const [downloadError, setDownloadError] = useState<string | null>(null);
   const passwordModalRef = useRef<PasswordModalRef>(null);
   const { store } = useContext(Context);
-  const [file, setFile] = useState<FileData[]>([]);
-  const [isLoading, setIsLoading] = useState<boolean>(true);
-  const [isError, setIsError] = useState<boolean>(false);
-  const [filteredFiles, setFilteredFiles] = useState<FileData[]>([]);
 
-
-    const fetchData = async () => {
-      try {
-        const response = await CloudService.getOneFile(obj_id,type);
-        const fileData = response.data.file_data;
-
-        
-          const files: FileOne[] = fileData.map((file: any) => ({
-            obj_id: String(file.obj_id),
-            name: String(file.name),
-            url: String(file.url),
-            created_at: String(file.created_at),
-            // memi_type
-          }));
-          setFile(files);
-          setFilteredFiles(files);
-          
-        
-      } catch (error) {
-        console.error("Ошибка при получении данных:", error);
-        setIsError(true);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    
-  
-
-
-
-
-
-  
   const handleDownload = async () => {
     try {
       setDownloadError(null);
@@ -142,18 +87,6 @@ const FileCard: React.FC<FileCardData> = ({ obj_id, created_at, name, url, type,
     }
   };
 
-
-
-
-
-
-
-
-
-
-
-
-
   const performView = async () => {
     try {
       const response = await fetch(url);
@@ -199,7 +132,7 @@ const FileCard: React.FC<FileCardData> = ({ obj_id, created_at, name, url, type,
       return false;
     }
   };
-  
+
 
 
   const handleDelete = async () => {
