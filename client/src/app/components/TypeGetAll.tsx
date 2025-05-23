@@ -1,23 +1,43 @@
 'use client';
-import {useEffect, useState} from "react";
-import {FileData} from "@/app/api/models/FileData";
+import { useContext, useEffect, useRef, useState } from "react";
+import { FileData } from "@/app/api/models/FileData";
 import CloudService from "../api/services/CloudServices";
-
-import TypeFileIcon from "../ui/TypeFileIcon";
-import {Loader2} from 'lucide-react';
-
+import { Loader2 } from 'lucide-react';
 import dynamic from 'next/dynamic';
 import TypeFileIcon from "../ui/TypeFileIcon";
+import React from "react";
+import { cryptoHelper } from "../api/utils/CryptoHelper";
+
+import { Context } from "../_app";
+import PasswordModal, {PasswordModalRef} from "@/app/ui/PasswordModal";
 
 
-export default function TypeBlock() {
+
+
+export type FileCardData = {
+  name: string;
+  created_at: string;
+  obj_id: string;
+  url: string;
+  type: string;
+  mime_type: string;
+  onDelete: (obj_id: string) => void;
+};
+
+
+
+
+
+
+export default function TypeGetAll() {
   const [filesByType, setFilesByType] = useState<Record<string, FileData[]>>({});
   const [isLoading, setIsLoading] = useState(true);
   const [isError, setIsError] = useState(false);
   const types = ['text', 'photo', 'video', 'unknown'];
-
- 
-
+ const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
+  const [downloadError, setDownloadError] = useState<string | null>(null);
+  const passwordModalRef = useRef<PasswordModalRef>(null);
+  const { store } = useContext(Context);
 
   const DiskUsageChart = dynamic(() => import('../ui/DiskUsageChart'), {
     ssr: false,
@@ -38,13 +58,7 @@ export default function TypeBlock() {
   });
   
 
-
-
-
-
-
-
-  useEffect(() => {
+ useEffect(() => {
     const fetchAllTypes = async () => {
       try {
         const result: Record<string, FileData[]> = {};
@@ -78,6 +92,78 @@ export default function TypeBlock() {
     fetchAllTypes();
   }, []);
 
+
+   const handleView = async () => {
+
+    try {
+      setDownloadError(null);
+      await store.initializeKey();
+
+      if (!store.hasCryptoKey) {
+        passwordModalRef.current?.open();
+        return;
+      }
+      await performView();
+    } catch (error) {
+      console.error('View error:', error);
+      setDownloadError('Ошибка при просмотре файла');
+    }
+  };
+
+
+  const handlePasswordSubmit = async (password: string): Promise<boolean> => {
+    try {
+      const success = await store.decryptAndStoreKey(password);
+      if (!success) {
+        setDownloadError('Неверный пароль');
+        return false;
+      }
+
+      const downloadSuccess = await performView();
+      passwordModalRef.current?.close();
+      return downloadSuccess;
+    } catch (error) {
+      console.error('Ошибка при скачивании или расшифровке файла:', error);
+      console.error('Password submit error:', error);
+      setDownloadError(error.message || 'Ошибка при расшифровке файла');
+      return false;
+    }
+  };
+
+
+    const performView = async () => {
+    try {
+      const response= await fetch(url);
+      if (!response.ok) throw new Error('Failed preview');
+
+
+      const blob = await response.blob();
+      // тут memitype
+      const encryptedFile = new File([blob], name, { } );
+      // функция для Славяна //
+      const decryptedBlob = await cryptoHelper.decryptFile(encryptedFile);
+      // Создаём ссылку на расшифрованный Blob
+      const viewUrl = URL.createObjectURL(decryptedBlob);
+
+      // Открываем файл в новой вкладке
+      window.open(viewUrl, '_blank');
+
+      // Освобождаем URL через минуту, чтобы не держать память
+      setTimeout(() => {
+        URL.revokeObjectURL(viewUrl);
+      }, 60000);
+
+      return true;
+    } catch (error) {
+      console.error('Decryption error:', error);
+      throw error;
+    }
+  };
+
+
+
+
+ 
   // if (isLoading) return (
   //   <div className="inset-0 bg-white/70 backdrop-blur-sm z-10 flex items-center justify-center">
   //     <div className="flex flex-col items-center">
@@ -100,46 +186,34 @@ export default function TypeBlock() {
 
 
   return (
+<>
+     <PasswordModal
+            ref={passwordModalRef}
+            onSubmit={handlePasswordSubmit}
+            title="Для скачивания или просмотра введите пароль"
+            description="Этот файл защищен шифрованием. Для доступа требуется ваш пароль."
+        />
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-2 gap-6 p-4">
       {types.map((type) => (
         <div
-
-          key={type}
-          className="bg-white border rounded-xl shadow-md p-4 flex flex-col justify-between w-full h-64"
-        >
-          <div className="flex items-center gap-2 mb-3">
-            <TypeFileIcon type={type} />
-            <h2 className="text-lg font-jetbrains text-blue-600 capitalize">{type}</h2>
-          </div>
-
-          {filesByType[type]?.length === 0 ? (
-            <div className="text-gray-500 text-center flex-1 flex flex-col items-center justify-center">
-              <p className="text-xl">📂 Нет файлов</p>
-            </div>
-          ) : (
-            <div className="space-y-2 overflow-auto flex-1">
-              {filesByType[type].map((item) => (
-                <div
-                  key={item.obj_id}
-                  className="text-xl border rounded p-2 flex justify-between items-center"
-                ><a href={item.url} target="_blank" rel="noopener noreferrer" className="text-blue-500 text-sm">
-                  <span className="truncate max-w-[150px]">{item.name}</span>
-                  </a>
-                </div>
-              ))}
-            </div>
-          )}
-
-
+        key={type}
+        className="bg-white border rounded-xl shadow-md p-4 flex flex-col justify-between w-full h-64"
+      >
+        <div className="flex items-center gap-2 mb-3">
+          <TypeFileIcon type={type} />
+          <h2 className="text-lg font-jetbrains text-blue-600 capitalize">{type}</h2>
         </div>
-      ))}
+        
+  <TypeBlockHome type={type}/>
 
-
+ </div>
+))}
 <div className="mt-10 p-4">
   <h2 className="text-xl font-semibold mb-3">📁 Все файлы</h2>
   <div className="flex flex-wrap gap-3 overflow-x-auto">
     {Object.values(filesByType).flat().map((file) => (
       <a
+        onClick={handleView}
         key={file.obj_id}
         href={file.url}
         target="_blank"
@@ -157,6 +231,6 @@ export default function TypeBlock() {
       />
 
     </div>
-
+</>
   );
 }

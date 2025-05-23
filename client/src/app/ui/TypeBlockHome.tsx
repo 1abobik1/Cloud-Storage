@@ -30,6 +30,7 @@ useEffect(() => {
               name: String(file.name),
               url: String(file.url),
               created_at: String(file.created_at),
+              mime_type: String(file.mime_type)
             }));
           } else {
             result[type] = [];
