@@ -5,7 +5,6 @@ import ProfileCircle from './ProfileCircle';
 import FileUploader from '../components/FileUploader';
 import TypeFileIcon from './TypeFileIcon';
 const links = [
-    {name: 'Home', href: '/cloud/home', icontype: 'home'  },
     {name: 'Videos',href: '/cloud/videos',icontype: 'video' ,},
     {name: 'Photos',href: '/cloud/photos',icontype: 'photo' ,},
     {name: 'Docs',href: '/cloud/docs',icontype: 'text' ,},
@@ -20,9 +19,9 @@ const Header = () => {
 
     return (
         <div className='flex flex-row justify-between px-5 '>
-            <div className="flex flex-row  p-4 my-4 bg-white ">
-                <TypeFileIcon type={activeLink.icontype} size={20}/>
-                <span className="ml-2 mt-1 text-sm font-semibold text-gray-900">{activeLink.name}</span>
+            <div className="flex flex-row  p-4 my-4 ">
+                <TypeFileIcon type={activeLink.icontype} size={28}/>
+                
             </div>
             <div className='flex flex-row py-6 mx-5'>
             <FileUploader/>

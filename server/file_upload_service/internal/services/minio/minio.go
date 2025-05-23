@@ -35,8 +35,8 @@ type Client interface {
 	GetOne(ctx context.Context, objectID dto.ObjectID, userID int) (dto.FileResponse, error)                    // Метод для получения одного объекта из бакета Minio
 	GetMany(ctx context.Context, objectIDs []dto.ObjectID, userID int) ([]dto.FileResponse, []error)            // Метод для получения нескольких объектов из бакета Minio
 	GetAll(ctx context.Context, t string, userID int) ([]dto.FileResponse, []error)                             // Метод для получения всех объектов из конкретного бакета Minio для конкретного пользователя
-	DeleteOne(ctx context.Context, objectID dto.ObjectID, userID int) error                                     // Метод для удаления одного объекта из бакета Minio
-	DeleteMany(ctx context.Context, objectIDs []dto.ObjectID, userID int) []error                               // Метод для удаления нескольких объектов из бакета Minio
+	DeleteOne(ctx context.Context, objectID dto.ObjectID, userID int) (int64, error)                            // Метод для удаления одного объекта из бакета Minio
+	DeleteMany(ctx context.Context, objectIDs []dto.ObjectID, userID int) ([]int64, []error)                    // Метод для удаления нескольких объектов из бакета Minio
 }
 
 type minioClient struct {
@@ -117,11 +117,19 @@ func (m *minioClient) CreateOne(ctx context.Context, file domain.FileContent, us
 		return dto.FileResponse{}, fmt.Errorf("error when creating the URL for the object %s: %v", file.Name, err)
 	}
 
+	// get Metadata in minio
+	objInfo, err := m.mc.StatObject(ctx, fileCategory, objID, minio.StatObjectOptions{})
+	if err != nil {
+		log.Printf("Error: %v, %s \n", err, op)
+		return dto.FileResponse{}, fmt.Errorf("error getting information about the object %s: %w", objID, ErrFileNotFound)
+	}
+
 	fileResp := dto.FileResponse{
 		Name:       file.Name,
 		Created_At: file.CreatedAt.Format(time.RFC3339),
 		ObjID:      objID,
 		Url:        url.String(),
+		MimeType: objInfo.ContentType,
 	}
 	// в redis храним только json (не поддерживает структуры)
 	fileRespJson, err := json.Marshal(fileResp)
@@ -251,11 +259,12 @@ func (m *minioClient) GetOne(ctx context.Context, objectID dto.ObjectID, userID 
 	if !okDate {
 		createdAtStr = objInfo.LastModified.Format(time.RFC3339)
 	}
-	
+
 	fileResp.Created_At = createdAtStr
 	fileResp.Name = objInfo.UserMetadata["File_name"]
 	fileResp.ObjID = objectID.ObjID
 	fileResp.Url = minioURL.String()
+	fileResp.MimeType = objInfo.ContentType
 
 	// преобразуем структуру в json для удобного хранения в redis
 	fileRespJson, errJson := json.Marshal(fileResp)
@@ -333,6 +342,7 @@ func (m *minioClient) GetAll(ctx context.Context, t string, userID int) ([]dto.F
 			fileResp.Name = objInfo.UserMetadata["File_name"]
 			fileResp.ObjID = object.Key
 			fileResp.Url = presignedURL.String()
+			fileResp.MimeType = objInfo.ContentType
 
 			// преобразуем структуру в json
 			fileRespJson, err := json.Marshal(fileResp)
@@ -422,7 +432,7 @@ func (m *minioClient) GetMany(ctx context.Context, objectIDs []dto.ObjectID, use
 }
 
 // DeleteOne удаляет один объект из бакета Minio по его идентификатору.
-func (m *minioClient) DeleteOne(ctx context.Context, objectID dto.ObjectID, userID int) error {
+func (m *minioClient) DeleteOne(ctx context.Context, objectID dto.ObjectID, userID int) (int64, error) {
 	const op = "location internal.minio.DeleteOne"
 
 	cacheKey := getRedisKey(objectID.ObjID, objectID.FileCategory)
@@ -435,83 +445,70 @@ func (m *minioClient) DeleteOne(ctx context.Context, objectID dto.ObjectID, user
 	objInfo, err := m.mc.StatObject(ctx, objectID.FileCategory, objectID.ObjID, minio.StatObjectOptions{})
 	if err != nil {
 		log.Printf("Error: %v, %s \n", err, op)
-		return fmt.Errorf("error getting information about the object %s: %w", objectID.ObjID, ErrFileNotFound)
+		return 0, fmt.Errorf("error getting information about the object %s: %w", objectID.ObjID, ErrFileNotFound)
 	}
+	size := objInfo.Size
 
 	userIdStr, ok := objInfo.UserMetadata["User_id"]
 	if !ok {
 		log.Printf("Error: %v, %s \n", err, op)
-		return fmt.Errorf("the user_id metadata was not found for the object %s: %w", objectID.ObjID, ErrFileNotFound)
+		return 0, fmt.Errorf("the user_id metadata was not found for the object %s: %w", objectID.ObjID, ErrFileNotFound)
 	}
 
 	userIdInt, err := strconv.Atoi(userIdStr)
 	if err != nil {
-		return fmt.Errorf("error converting string number: %s to int", userIdStr)
+		return 0, fmt.Errorf("error converting string number: %s to int", userIdStr)
 	}
 
 	if userIdInt != userID {
-		return fmt.Errorf("you don't have access rights to other people's files: %w", ErrForbiddenResource)
+		return 0, fmt.Errorf("you don't have access rights to other people's files: %w", ErrForbiddenResource)
 	}
 
 	// deleting data in minio if not in redis
 	err = m.mc.RemoveObject(ctx, objectID.FileCategory, objectID.ObjID, minio.RemoveObjectOptions{})
 	if err != nil {
 		log.Printf("error: %v, %s", err, op)
-		return OperationError{ObjectID: objectID.ObjID, Err: fmt.Errorf("couldn't delete selected file: %w", ErrFileNotFound)}
+		return 0, OperationError{ObjectID: objectID.ObjID, Err: fmt.Errorf("couldn't delete selected file: %w", ErrFileNotFound)}
 	}
-	return nil
+	return size, nil
 }
 
-func (m *minioClient) DeleteMany(ctx context.Context, objectIDs []dto.ObjectID, userID int) []error {
-	errCh := make(chan OperationError, len(objectIDs))
+// DeleteMany удаляет сразу несколько объектов, возвращая размеры удалённых и ошибки
+func (m *minioClient) DeleteMany(ctx context.Context, objectIDs []dto.ObjectID, userID int) ([]int64, []error) {
+	type result struct {
+		size int64
+		err  error
+	}
+	resCh := make(chan result, len(objectIDs))
 	var wg sync.WaitGroup
-
-	ctx, cancel := context.WithCancel(ctx)
-	defer cancel()
 
 	for _, objectID := range objectIDs {
 		wg.Add(1)
-		go func(objectID dto.ObjectID) {
+		go func(obj dto.ObjectID) {
 			defer wg.Done()
-
-			// Проверяем, отменён ли контекст перед удалением
-			if ctx.Err() != nil {
-				return
-			}
-
-			err := m.DeleteOne(ctx, objectID, userID)
-			if err != nil {
-				select {
-				case <-ctx.Done():
-					return
-				case errCh <- OperationError{
-					ObjectID: objectID.ObjID,
-					Err:      err,
-				}:
-				}
-
-				cancel()
-			}
+			size, err := m.DeleteOne(ctx, obj, userID)
+			resCh <- result{size: size, err: err}
 		}(objectID)
 	}
 
-	// Ожидание завершения горутин и закрытие канала ошибок
+	// Собираем результаты
 	go func() {
 		wg.Wait()
-		close(errCh)
+		close(resCh)
 	}()
 
-	// Сбор ошибок
-	var errs []error
-	for opErr := range errCh {
-		errs = append(errs, opErr.Err)
+	var (
+		sizes []int64
+		errs  []error
+	)
+	for r := range resCh {
+		if r.err != nil {
+			errs = append(errs, r.err)
+		} else {
+			sizes = append(sizes, r.size)
+		}
 	}
-
-	if len(errs) > 0 {
-		return errs
-	}
-
-	return nil
+	return sizes, errs
 }
 
 func getRedisKey(ObjID, fileType string) string {

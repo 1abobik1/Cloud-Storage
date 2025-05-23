@@ -1,0 +1,392 @@
+basePath: /
+definitions:
+  dto.ObjectIDs:
+    properties:
+      object_ids:
+        items:
+          type: string
+        type: array
+    type: object
+  handler.ErrorResponse:
+    properties:
+      details:
+        description: |-
+          Дополнительные детали (при наличии)
+          example: "field 'file' is required"
+      error:
+        description: |-
+          Краткое описание ошибки
+          example: "Invalid request"
+        type: string
+      status:
+        description: |-
+          Код HTTP-статуса
+          example: 400
+        type: integer
+    type: object
+host: localhost:8080
+info:
+  contact:
+    email: support@example.com
+    name: API Support
+    url: http://www.example.com/support
+  description: API для загрузки, получения и удаления файлов в облачном хранилище
+    MinIO.
+  license:
+    name: Apache 2.0
+    url: http://www.apache.org/licenses/LICENSE-2.0.html
+  termsOfService: http://example.com/terms/
+  title: File Upload Service API
+  version: "1.0"
+paths:
+  /files/all:
+    get:
+      description: Возвращает предпр. подписанные ссылки на скачивание всех файлов
+        заданной категории (photo, unknown, video, text).
+      parameters:
+      - description: Bearer {token}
+        in: header
+        name: Authorization
+        required: true
+        type: string
+      - description: Категория файлов (photo, unknown, video, text)
+        in: query
+        name: type
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Список ссылок на все файлы категории
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Некорректная категория
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "403":
+          description: Доступ запрещён
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+        "404":
+          description: Файлы не найдены
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+        "500":
+          description: Внутренняя ошибка сервера
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+      security:
+      - bearerAuth: []
+      summary: Получение всех файлов категории
+      tags:
+      - Files
+  /files/many:
+    delete:
+      consumes:
+      - application/json
+      description: Удаляет несколько объектов из MinIO, переданных в JSON-массиве,
+        и снижает использование квоты.
+      parameters:
+      - description: Bearer {token}
+        in: header
+        name: Authorization
+        required: true
+        type: string
+      - description: Массив идентификаторов объектов
+        in: body
+        name: objectIDs
+        required: true
+        schema:
+          $ref: '#/definitions/dto.ObjectIDs'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Файлы успешно удалены
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Некорректный JSON в теле запроса
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+        "403":
+          description: Доступ запрещён
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+        "404":
+          description: Один из файлов не найден
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+        "500":
+          description: Внутренняя ошибка сервера
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+      security:
+      - bearerAuth: []
+      summary: Удаление нескольких файлов
+      tags:
+      - Files
+    get:
+      consumes:
+      - application/json
+      description: Возвращает предпр. подписанные ссылки на скачивание нескольких
+        файлов.
+      parameters:
+      - description: Bearer {token}
+        in: header
+        name: Authorization
+        required: true
+        type: string
+      - description: Массив идентификаторов объектов
+        in: body
+        name: objectIDs
+        required: true
+        schema:
+          $ref: '#/definitions/dto.ObjectIDs'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Ссылки на скачивание файлов
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Некорректный JSON в теле запроса
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+        "403":
+          description: Доступ запрещён
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+        "404":
+          description: Один из файлов не найден
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+        "500":
+          description: Внутренняя ошибка сервера
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+      security:
+      - bearerAuth: []
+      summary: Получение нескольких файлов
+      tags:
+      - Files
+    post:
+      consumes:
+      - multipart/form-data
+      description: Загружает несколько файлов в MinIO через form-data.
+      parameters:
+      - description: Bearer {token}
+        in: header
+        name: Authorization
+        required: true
+        type: string
+      - collectionFormat: multi
+        description: Массив файлов для загрузки
+        in: formData
+        items:
+          type: file
+        name: files
+        required: true
+        type: array
+      - collectionFormat: multi
+        description: Массив MIME-типов (по индексу)
+        in: formData
+        items:
+          type: string
+        name: mime_type
+        type: array
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Файлы успешно загружены + данные о файлах
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Некорректная форма или отсутствуют файлы
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+        "403":
+          description: Превышена квота
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+        "413":
+          description: Один из файлов слишком большой
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Внутренняя ошибка сервера
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+      security:
+      - bearerAuth: []
+      summary: Загрузка нескольких файлов
+      tags:
+      - Files
+  /files/one:
+    delete:
+      description: Удаляет один объект из MinIO и снижает использование квоты.
+      parameters:
+      - description: Bearer {token}
+        in: header
+        name: Authorization
+        required: true
+        type: string
+      - description: Идентификатор объекта
+        in: query
+        name: id
+        required: true
+        type: string
+      - description: Категория файла (photo, unknown, video, text)
+        in: query
+        name: type
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Файл успешно удалён
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Некорректный запрос
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+        "403":
+          description: Доступ запрещён
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+        "404":
+          description: Файл не найден
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+        "500":
+          description: Внутренняя ошибка сервера
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+      security:
+      - bearerAuth: []
+      summary: Удаление одного файла
+      tags:
+      - Files
+    get:
+      description: Возвращает предпр. подписанную ссылку на скачивание одного файла
+        по ID и типу.
+      parameters:
+      - description: Bearer {token}
+        in: header
+        name: Authorization
+        required: true
+        type: string
+      - description: Идентификатор объекта
+        in: query
+        name: id
+        required: true
+        type: string
+      - description: Категория файла (photo, unknown, video, text)
+        in: query
+        name: type
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Ссылка на скачивание файла
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Некорректный запрос
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+        "403":
+          description: Доступ запрещён
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+        "404":
+          description: Файл не найден
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+        "500":
+          description: Внутренняя ошибка сервера
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+      security:
+      - bearerAuth: []
+      summary: Получение одного файла
+      tags:
+      - Files
+    post:
+      consumes:
+      - multipart/form-data
+      description: Загружает один файл в MinIO. Необходимо передавать form-data с
+        полем `file`.
+      parameters:
+      - description: Bearer {token}
+        in: header
+        name: Authorization
+        required: true
+        type: string
+      - description: Файл для загрузки
+        in: formData
+        name: file
+        required: true
+        type: file
+      - description: MIME-тип (если не указан, определяется автоматически)
+        in: formData
+        name: mime_type
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Файл успешно загружен + данные о файле
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Некорректный запрос
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+        "403":
+          description: Превышена квота
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "413":
+          description: Файл слишком большой
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Внутренняя ошибка сервера
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+      security:
+      - bearerAuth: []
+      summary: Загрузка одного файла
+      tags:
+      - Files
+securityDefinitions:
+  bearerAuth:
+    description: '"Bearer {token}"'
+    in: header
+    name: Authorization
+    type: apiKey
+swagger: "2.0"

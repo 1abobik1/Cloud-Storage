@@ -7,17 +7,12 @@ export default class AuthService {
         return auth.post<AuthResponse>('/user/login', { email, password, platform });
     }
 
-    static async signup(email: string, password: string, platform: string): Promise<AxiosResponse<AuthResponse>> {
-        return auth.post<AuthResponse>('/user/signup', { email, password, platform });
+    static async signup(email: string, password: string, user_key:string, platform: string): Promise<AxiosResponse<AuthResponse>> {
+        return auth.post<AuthResponse>('/user/signup', { email, password, user_key, platform });
     }
 
     static async logout(): Promise<void> {
         return auth.post('/user/logout');
     }
 
-    
-
-    static async verify(email: string) {
-        return auth.post('/verify-email/', { email });
-    }
 }

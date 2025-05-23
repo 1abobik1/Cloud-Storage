@@ -1,24 +1,23 @@
 'use client';
-import ReCAPTCHA from 'react-google-recaptcha';
 import React, {useContext, useState} from 'react';
 import {Context} from '@/app/_app';
 import {observer} from "mobx-react-lite";
 
 const LoginForm = () => {
-  const [platform, setPlatform] = useState('');
+  const [platform, setPlatform] = useState('ios-mobile');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const { store } = useContext(Context);
-  
+
 
     const [captchaVerified, setCaptchaVerified] = useState(false);
-  
+
     const handleCaptchaChange = (value: string | null) => {
       if (value) {
         setCaptchaVerified(true);
       }
     };
-  
+
 
   return (
     <div className="flex items-center justify-center min-h-screen bg-gray-100">
@@ -57,7 +56,7 @@ const LoginForm = () => {
             />
           </div>
           <div>
-            <label htmlFor="platform" className="block text-sm font-medium text-gray-700">
+            {/* <label htmlFor="platform" className="block text-sm font-medium text-gray-700">
               Платформа
             </label>
             <select
@@ -73,14 +72,14 @@ const LoginForm = () => {
               </option>
               <option value="ios-mobile">iOS</option>
               <option value="android-mobile">Android</option>
-            </select>
+            </select> */}
 
         {/* Тут капча важно */}
         <div style={{ transform: "scale(0.9)", transformOrigin: "0 0", maxWidth: "100%" }}>
-  <ReCAPTCHA
-    sitekey="6LffSw4rAAAAAENeTm2aejDbLWa2QvbO8eOkjRlL"
-    onChange={handleCaptchaChange}
-  />
+  {/*<ReCAPTCHA*/}
+  {/*  sitekey="6LffSw4rAAAAAENeTm2aejDbLWa2QvbO8eOkjRlL"*/}
+  {/*  onChange={handleCaptchaChange}*/}
+  {/*/>*/}
 </div>
 
 
@@ -92,7 +91,7 @@ const LoginForm = () => {
               onClick={() => store.login(email, password,platform)}
               className="w-full px-4 py-2 text-sm font-medium text-black bg-indigo-600 border border-transparent rounded-md shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
             >
-              Логин
+              Войти
             </button>
           </div>
           <div className="flex items-center justify-between">

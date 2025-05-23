@@ -12,11 +12,12 @@ import (
 // Структура данных для хранения пользовательских claims
 type customClaims struct {
 	UserID int `json:"user_id"`
+	UserKey string `json:"user_key"`
 	jwt.RegisteredClaims
 }
 
 // Создание Access Token
-func CreateAccessToken(userID int, duration time.Duration, privateKeyPath string) (string, error) {
+func CreateAccessToken(userKey string, userID int, duration time.Duration, privateKeyPath string) (string, error) {
 	privateKey, err := getgPrivateKey(privateKeyPath)
 	if err != nil {
 		return "", fmt.Errorf("error to get private key in file: %s", privateKeyPath)
@@ -25,6 +26,7 @@ func CreateAccessToken(userID int, duration time.Duration, privateKeyPath string
 	// Настраиваем claims для access токена
 	claims := customClaims{
 		UserID: userID,
+		UserKey: userKey,
 		RegisteredClaims: jwt.RegisteredClaims{
 			ExpiresAt: jwt.NewNumericDate(time.Now().Add(duration)), // Устанавливаем срок действия токена
 			IssuedAt:  jwt.NewNumericDate(time.Now()),               // Время выпуска токена
@@ -43,7 +45,7 @@ func CreateAccessToken(userID int, duration time.Duration, privateKeyPath string
 }
 
 // Создание Refresh Token
-func CreateRefreshToken(userID int, duration time.Duration, privateKeyPath string) (string, error) {
+func CreateRefreshToken(userKey string, userID int, duration time.Duration, privateKeyPath string) (string, error) {
 
 	privateKey, err := getgPrivateKey(privateKeyPath)
 	if err != nil {
@@ -52,6 +54,7 @@ func CreateRefreshToken(userID int, duration time.Duration, privateKeyPath strin
 	// Настраиваем claims для refresh токена
 	claims := customClaims{
 		UserID: userID,
+		UserKey: userKey,
 		RegisteredClaims: jwt.RegisteredClaims{
 			ExpiresAt: jwt.NewNumericDate(time.Now().Add(duration)), // Срок действия токена
 			IssuedAt:  jwt.NewNumericDate(time.Now()),               // Время выпуска токена

@@ -1,6 +1,7 @@
 package serviceToken
 
 import (
+	"context"
 	"fmt"
 	"log"
 
@@ -16,7 +17,13 @@ func (s *tokenService) UpdateAccessToken(refreshToken string) (string, error) {
 		return "", err
 	}
 
-	newAccessToken, err := utils.CreateAccessToken(userID, s.cfg.AccessTokenTTL, s.cfg.PrivateKeyPath)
+	userKey, err := s.tokenStorage.GetUserKey(context.TODO(), userID)
+	if err != nil {
+		log.Printf("Error: %v", err)
+		return "", err
+	}
+
+	newAccessToken, err := utils.CreateAccessToken(userKey, userID, s.cfg.AccessTokenTTL, s.cfg.PrivateKeyPath)
 	if err != nil {
 		log.Printf("Error creating access token: %v, location %s \n", err, op)
 		return "", fmt.Errorf("error creating access token: %w", err)
