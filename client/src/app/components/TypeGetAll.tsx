@@ -6,6 +6,8 @@ import dynamic from 'next/dynamic';
 import TypeFileIcon from '../ui/TypeFileIcon';
 import FileCard from '../ui/FileCard';
 import {Loader2} from 'lucide-react';
+import { useUsageRefresh } from './UsageRefreshContext';
+import TypeToTranslate from '../ui/TypeToTranslate';
 
 
 export default function TypeGetAll() {
@@ -13,7 +15,7 @@ export default function TypeGetAll() {
     const [isLoading, setIsLoading] = useState(true);
     const [isError, setIsError] = useState(false);
     const types = ['text', 'photo', 'video', 'unknown'];
-
+const { refreshKey } = useUsageRefresh();
     const DiskUsageChart = dynamic(() => import('../ui/DiskUsageChart'), {
         ssr: false,
         loading: () => (
@@ -59,7 +61,7 @@ export default function TypeGetAll() {
         };
 
         fetchAllTypes();
-    }, []);
+    }, [refreshKey]);
 
     // Обработчик удаления файла
     const handleDelete = (obj_id: string) => {
@@ -87,15 +89,11 @@ export default function TypeGetAll() {
         return <p className="text-red-500">Произошла ошибка при загрузке данных.</p>;
     }
 
-    // Рассчитываем количество файлов по типам
-    const fileCounts = types.reduce((acc, type) => {
-        acc[type] = filesByType[type]?.length || 0;
-        return acc;
-    }, {} as Record<string, number>);
+
 
 
     return (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-2 gap-6 p-4">
+        <div className="grid grid-cols-1 sm:grid-cols-1 lg:grid-cols-1 xl:grid-cols-2 gap-6 p-4">
             {types.map((type) => (
                 <div
                     key={type}
@@ -103,7 +101,7 @@ export default function TypeGetAll() {
                 >
                     <div className="flex items-center gap-2 mb-3">
                         <TypeFileIcon type={type} />
-                        <h2 className="text-lg font-jetbrains text-blue-600 capitalize">{type}</h2>
+                        <h2 className="text-lg font-jetbrains text-blue-600 capitalize"><TypeToTranslate type={type}/></h2>
                     </div>
 
                     {filesByType[type]?.length === 0 ? (
@@ -111,7 +109,7 @@ export default function TypeGetAll() {
                             <p className="text-xl">📂 Нет файлов</p>
                         </div>
                     ) : (
-                        <div className="space-y-2 overflow-auto flex-1">
+                        <div className="space-y-0 overflow-auto flex-1">
                             {filesByType[type].map((item) => (
                                 <FileCard
                                     key={item.obj_id}
@@ -129,25 +127,9 @@ export default function TypeGetAll() {
                 </div>
             ))}
 
-            <div className="mt-10 p-4">
-                <h2 className="text-xl font-semibold mb-3">📁 Все файлы</h2>
-                <div className="flex flex-wrap gap-3 overflow-x-auto">
-                    {Object.values(filesByType).flat().map((file) => (
-                        <button
-                            key={file.obj_id}
-                            onClick={() => {
-                                // Вызываем handleView из FileCard (нужно передать данные в FileCard)
-                                // Временное решение: отображаем как ссылку без href
-                            }}
-                            className="px-3 py-2 bg-gray-100 rounded-lg border shadow text-sm hover:bg-blue-50 transition whitespace-nowrap"
-                        >
-                            {file.name}
-                        </button>
-                    ))}
-                </div>
-            </div>
+           
 
-            <DiskUsageChart fileCounts={fileCounts} />
+            <DiskUsageChart  />
         </div>
     );
 }
