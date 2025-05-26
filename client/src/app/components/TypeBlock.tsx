@@ -6,6 +6,8 @@ import FileCard from "@/app/ui/FileCard";
 import TypeFileIcon from "../ui/TypeFileIcon";
 import FileUploader from "./FileUploader";
 import {Loader2} from 'lucide-react';
+import { useUsageRefresh } from "./UsageRefreshContext";
+import TypeToTranslate from "../ui/TypeToTranslate";
 
 export default function TypeBlock({ type }) {
   const [file, setFile] = useState<FileData[]>([]);
@@ -15,7 +17,7 @@ export default function TypeBlock({ type }) {
   const [nameSortAsc, setNameSortAsc] = useState<boolean>(true);
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc'); // сортировка по возрастанию или убыванию
   const [filteredFiles, setFilteredFiles] = useState<FileData[]>([]);
-
+const { refreshKey } = useUsageRefresh();
 
   useEffect(() => {
     const fetchData = async () => {
@@ -25,6 +27,7 @@ export default function TypeBlock({ type }) {
         const fileData = response.data.file_data;
 
         if (Array.isArray(fileData)) {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           const files: FileData[] = fileData.map((file: any) => ({
             obj_id: String(file.obj_id),
             name: String(file.name),
@@ -47,7 +50,7 @@ export default function TypeBlock({ type }) {
     };
 
     fetchData();
-  }, [type]);
+  }, [type,refreshKey]);
 
   // Функция сортировки по дате
   const sortFiles = (order: 'asc' | 'desc') => {
@@ -107,7 +110,7 @@ export default function TypeBlock({ type }) {
       ) : (
         <div className="sm:p-6 p-2 mx-auto bg-white rounded shadow ">
           <h2 className="text-xl font-jetbrains  mb-4 flex items-center gap-2">
-            <TypeFileIcon type={type}/><div className="text-blue-500">{type}</div>
+            <TypeFileIcon type={type}/><div className="text-blue-500"><TypeToTranslate type={type}/></div>
           </h2>
 
           <div className="flex flex-row justify-between">
