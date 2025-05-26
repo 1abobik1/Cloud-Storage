@@ -109,7 +109,7 @@ const { refreshKey } = useUsageRefresh();
                             <p className="text-xl">📂 Нет файлов</p>
                         </div>
                     ) : (
-                        <div className="space-y-2 overflow-auto flex-1">
+                        <div className="space-y-0 overflow-auto flex-1">
                             {filesByType[type].map((item) => (
                                 <FileCard
                                     key={item.obj_id}
